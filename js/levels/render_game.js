@@ -121,59 +121,66 @@
 
         const cellSize = renderInfo.cellSize;
         const radius = ball.radius;
-        let nextX = ball.pos.x + ball.vel.x * dt;
-        let nextY = ball.pos.y + ball.vel.y * dt;
 
-        // Horizontal collisions
-        const minRow = Math.max(0, Math.floor((nextY - radius) / cellSize));
-        const maxRow = Math.min(renderInfo.rows - 1, Math.floor((nextY + radius) / cellSize));
-        if (ball.vel.x > 0) {
-            const col = Math.floor((nextX + radius) / cellSize);
-            for (let r = minRow; r <= maxRow; r++) {
-                if (isWall(col, r)) {
-                    nextX = col * cellSize - radius - 0.01;
-                    ball.vel.x = 0;
-                    break;
+        // Split the integration into smaller chunks to avoid tunneling through thin walls when velocity is high.
+        const speed = Math.max(Math.abs(ball.vel.x), Math.abs(ball.vel.y));
+        const maxTravelPerSubStep = cellSize * 0.45; // keep each move under ~half a cell
+        const steps = Math.max(1, Math.ceil(speed * dt / Math.max(1, maxTravelPerSubStep)));
+        const stepDt = dt / steps;
+
+        for (let i = 0; i < steps; i++) {
+            // Horizontal move
+            let nextX = ball.pos.x + ball.vel.x * stepDt;
+            const minRow = Math.max(0, Math.floor((ball.pos.y - radius) / cellSize));
+            const maxRow = Math.min(renderInfo.rows - 1, Math.floor((ball.pos.y + radius) / cellSize));
+            if (ball.vel.x > 0) {
+                const col = Math.floor((nextX + radius) / cellSize);
+                for (let r = minRow; r <= maxRow; r++) {
+                    if (isWall(col, r)) {
+                        nextX = col * cellSize - radius - 0.01;
+                        ball.vel.x = 0;
+                        break;
+                    }
+                }
+            } else if (ball.vel.x < 0) {
+                const col = Math.floor((nextX - radius) / cellSize);
+                for (let r = minRow; r <= maxRow; r++) {
+                    if (isWall(col, r)) {
+                        nextX = (col + 1) * cellSize + radius + 0.01;
+                        ball.vel.x = 0;
+                        break;
+                    }
                 }
             }
-        } else if (ball.vel.x < 0) {
-            const col = Math.floor((nextX - radius) / cellSize);
-            for (let r = minRow; r <= maxRow; r++) {
-                if (isWall(col, r)) {
-                    nextX = (col + 1) * cellSize + radius + 0.01;
-                    ball.vel.x = 0;
-                    break;
+            const maxX = renderInfo.cols * cellSize - radius;
+            ball.pos.x = clamp(nextX, radius, maxX);
+
+            // Vertical move
+            let nextY = ball.pos.y + ball.vel.y * stepDt;
+            const minCol = Math.max(0, Math.floor((ball.pos.x - radius) / cellSize));
+            const maxCol = Math.min(renderInfo.cols - 1, Math.floor((ball.pos.x + radius) / cellSize));
+            if (ball.vel.y > 0) {
+                const row = Math.floor((nextY + radius) / cellSize);
+                for (let c = minCol; c <= maxCol; c++) {
+                    if (isWall(c, row)) {
+                        nextY = row * cellSize - radius - 0.01;
+                        ball.vel.y = 0;
+                        break;
+                    }
+                }
+            } else if (ball.vel.y < 0) {
+                const row = Math.floor((nextY - radius) / cellSize);
+                for (let c = minCol; c <= maxCol; c++) {
+                    if (isWall(c, row)) {
+                        nextY = (row + 1) * cellSize + radius + 0.01;
+                        ball.vel.y = 0;
+                        break;
+                    }
                 }
             }
+            const maxY = renderInfo.rows * cellSize - radius;
+            ball.pos.y = clamp(nextY, radius, maxY);
         }
-
-        // Vertical collisions
-        const minCol = Math.max(0, Math.floor((nextX - radius) / cellSize));
-        const maxCol = Math.min(renderInfo.cols - 1, Math.floor((nextX + radius) / cellSize));
-        if (ball.vel.y > 0) {
-            const row = Math.floor((nextY + radius) / cellSize);
-            for (let c = minCol; c <= maxCol; c++) {
-                if (isWall(c, row)) {
-                    nextY = row * cellSize - radius - 0.01;
-                    ball.vel.y = 0;
-                    break;
-                }
-            }
-        } else if (ball.vel.y < 0) {
-            const row = Math.floor((nextY - radius) / cellSize);
-            for (let c = minCol; c <= maxCol; c++) {
-                if (isWall(c, row)) {
-                    nextY = (row + 1) * cellSize + radius + 0.01;
-                    ball.vel.y = 0;
-                    break;
-                }
-            }
-        }
-
-        const maxX = renderInfo.cols * cellSize - radius;
-        const maxY = renderInfo.rows * cellSize - radius;
-        ball.pos.x = clamp(nextX, radius, maxX);
-        ball.pos.y = clamp(nextY, radius, maxY);
 
         if (!goalReached && goalCell) {
             const cellR = Math.floor(ball.pos.y / cellSize);
@@ -401,4 +408,3 @@
     });
 
 })();
-

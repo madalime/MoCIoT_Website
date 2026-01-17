@@ -28,9 +28,7 @@
     };
 
     const sensorState = { accel: { x: 0, y: 0 }, enabled: false, available: false };
-    const keyState = { left: false, right: false, up: false, down: false };
 
-    // ------- Modal & pause helpers -------
     function pauseGame() {
         animationPaused = true;
         if (animationId) {
@@ -38,13 +36,6 @@
             animationId = null;
         }
     }
-
-    /*function resumeGame() {
-        if (!animationPaused) return;
-        animationPaused = false;
-        lastFrameTime = null;
-        animationId = requestAnimationFrame(loop);
-    }*/
 
     function createWinModal() {
         if (document.getElementById('winModalOverlay')) return;
@@ -115,11 +106,6 @@
         if (prim && typeof prim.focus === 'function') prim.focus();
     }
 
-    /*function hideWinModal() {
-        const el = document.getElementById('winModalOverlay');
-        if (el && el.parentNode) el.parentNode.removeChild(el);
-    }*/
-    // ------- end modal & pause helpers -------
 
     function isTouchDevice() {
         return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
@@ -198,14 +184,9 @@
         let ax = 0;
         let ay = 0;
         if (sensorState.enabled && sensorState.available) {
-            ax += sensorState.accel.x;
-            ay += sensorState.accel.y;
+            ax = sensorState.accel.x;
+            ay = sensorState.accel.y;
         }
-        const keyAccel = 700;
-        if (keyState.left) ax -= keyAccel;
-        if (keyState.right) ax += keyAccel;
-        if (keyState.up) ay -= keyAccel;
-        if (keyState.down) ay += keyAccel;
         return { ax, ay };
     }
 

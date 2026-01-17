@@ -1,13 +1,75 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Title</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game - Main menu</title>
   <link rel="stylesheet" href="css/bootstrap.css">
-  <script src="js/bootstrap.js"></script>
 </head>
-<body>
-  <h1>Hello Bootstrap</h1>
+<body class="d-flex align-items-center justify-content-center vh-100 bg-primary">
+  <div class="bg-white border border-secondary border-2 rounded-4 px-4 py-4 shadow-sm d-inline-block mx-4 my-4" role="main">
+    <div class="text-center">
+      <h1 class="mb-4">Marble Maze</h1>
+
+      <div class="d-grid gap-3 col-6 w-100 mx-auto">
+        <a href="play.html" class="btn btn-primary btn-lg">Play</a>
+        <button type="button" class="btn btn-secondary btn-lg" data-bs-toggle="modal" data-bs-target="#settingsModal">Settings</button>
+        <button type="button" class="btn btn-outline-dark btn-lg" data-bs-toggle="modal" data-bs-target="#creditsModal">Credits</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="settingsLabel">Settings</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+        </div>
+        <div class="modal-body">
+          <form>
+            <div class="mb-3">
+              <label class="form-label" for="volumeRange">Volume</label>
+              <input type="range" class="form-range" min="0" max="100" value="75" id="volumeRange">
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="difficultySelect">Difficulty</label>
+              <select class="form-select" id="difficultySelect">
+                <option>Easy</option>
+                <option selected>Medium</option>
+                <option>Hard</option>
+              </select>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">close</button>
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Credits Modal -->
+  <div class="modal fade" id="creditsModal" tabindex="-1" aria-labelledby="creditsLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="creditsLabel">Credits</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+        </div>
+        <div class="modal-body">
+          <p>Developed by: madalime</p>
+          <p>Version: 0.1</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Schließen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/bootstrap.js"></script>
 </body>
 </html>

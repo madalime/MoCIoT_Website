@@ -19,6 +19,7 @@
     let goalReached = false;
     let animationId = null;
     let lastFrameTime = null;
+    let animationPaused = false;
 
     const ball = {
         pos: { x: 0, y: 0 },
@@ -28,6 +29,97 @@
 
     const sensorState = { accel: { x: 0, y: 0 }, enabled: false, available: false };
     const keyState = { left: false, right: false, up: false, down: false };
+
+    // ------- Modal & pause helpers -------
+    function pauseGame() {
+        animationPaused = true;
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+    }
+
+    /*function resumeGame() {
+        if (!animationPaused) return;
+        animationPaused = false;
+        lastFrameTime = null;
+        animationId = requestAnimationFrame(loop);
+    }*/
+
+    function createWinModal() {
+        if (document.getElementById('winModalOverlay')) return;
+        const overlayEl = document.createElement('div');
+        overlayEl.id = 'winModalOverlay';
+        overlayEl.setAttribute('role', 'dialog');
+        overlayEl.setAttribute('aria-modal', 'true');
+        overlayEl.style.position = 'fixed';
+        overlayEl.style.inset = '0';
+        overlayEl.style.display = 'flex';
+        overlayEl.style.alignItems = 'center';
+        overlayEl.style.justifyContent = 'center';
+        overlayEl.style.background = 'rgba(0,0,0,0.45)';
+        overlayEl.style.zIndex = '1060';
+
+        const card = document.createElement('div');
+        card.className = 'card text-center p-3';
+        card.style.minWidth = '260px';
+        card.style.maxWidth = '90%';
+
+        const body = document.createElement('div');
+        body.className = 'card-body';
+
+        const title = document.createElement('h5');
+        title.className = 'card-title mb-3';
+        title.textContent = 'You reached the goal!';
+
+        const btnGroup = document.createElement('div');
+        btnGroup.className = 'd-flex gap-2 justify-content-center';
+
+        const overviewBtn = document.createElement('button');
+        overviewBtn.type = 'button';
+        overviewBtn.className = 'btn btn-outline-secondary';
+        overviewBtn.textContent = 'level overview';
+        overviewBtn.addEventListener('click', () => {
+            // navigate to levels overview (../index.html)
+            location.href = location.pathname.replace(/\/play\/[^/]*$/, '/index.html');
+        });
+
+        const nextBtn = document.createElement('button');
+        nextBtn.type = 'button';
+        nextBtn.className = 'btn btn-primary';
+        nextBtn.textContent = 'next level';
+        nextBtn.addEventListener('click', () => {
+            const nextLevel = Number(requestedLevel) + 1;
+            const base = location.pathname.split('?')[0];
+            location.href = base + '?level=' + nextLevel;
+        });
+
+        btnGroup.appendChild(overviewBtn);
+        btnGroup.appendChild(nextBtn);
+
+        body.appendChild(title);
+        body.appendChild(btnGroup);
+        card.appendChild(body);
+        overlayEl.appendChild(card);
+
+        document.body.appendChild(overlayEl);
+    }
+
+    function showWinModal() {
+        createWinModal();
+        const el = document.getElementById('winModalOverlay');
+        if (!el) return;
+        el.style.display = 'flex';
+        // focus the primary button for keyboard users
+        const prim = el.querySelector('.btn-primary');
+        if (prim && typeof prim.focus === 'function') prim.focus();
+    }
+
+    /*function hideWinModal() {
+        const el = document.getElementById('winModalOverlay');
+        if (el && el.parentNode) el.parentNode.removeChild(el);
+    }*/
+    // ------- end modal & pause helpers -------
 
     function isTouchDevice() {
         return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
@@ -145,7 +237,9 @@
             const cellC = Math.floor(ball.pos.x / cellSize);
             if (cellR === goalCell.r && cellC === goalCell.c) {
                 goalReached = true;
-                showMessage('You reached the goal! Tilt or use arrows to play again.', 'success');
+                // Pause game loop and show a centered modal with options
+                pauseGame();
+                showWinModal();
             }
         }
     }

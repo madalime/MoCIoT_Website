@@ -2,6 +2,7 @@
     const canvas = document.getElementById('levelCanvas');
     const overlay = document.getElementById('ballCanvas');
     const msg = document.getElementById('messageArea');
+    const startOverlay = document.getElementById('startOverlay');
 
     // Get level param from URL
     const params = new URLSearchParams(location.search);
@@ -27,6 +28,10 @@
 
     const sensorState = { accel: { x: 0, y: 0 }, enabled: false, available: false };
     const keyState = { left: false, right: false, up: false, down: false };
+
+    function isTouchDevice() {
+        return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+    }
 
     function showMessage(text, type = 'danger') {
         msg.innerHTML = `<div class="alert alert-${type}" role="alert">${text}</div>`;
@@ -122,64 +127,17 @@
         const cellSize = renderInfo.cellSize;
         const radius = ball.radius;
 
-        // Split the integration into smaller chunks to avoid tunneling through thin walls when velocity is high.
-        const speed = Math.max(Math.abs(ball.vel.x), Math.abs(ball.vel.y));
-        const maxTravelPerSubStep = cellSize * 0.45; // keep each move under ~half a cell
+        const speed = Math.hypot(ball.vel.x, ball.vel.y);
+        const maxTravelPerSubStep = cellSize * 0.45;
         const steps = Math.max(1, Math.ceil(speed * dt / Math.max(1, maxTravelPerSubStep)));
         const stepDt = dt / steps;
 
         for (let i = 0; i < steps; i++) {
-            // Horizontal move
-            let nextX = ball.pos.x + ball.vel.x * stepDt;
-            const minRow = Math.max(0, Math.floor((ball.pos.y - radius) / cellSize));
-            const maxRow = Math.min(renderInfo.rows - 1, Math.floor((ball.pos.y + radius) / cellSize));
-            if (ball.vel.x > 0) {
-                const col = Math.floor((nextX + radius) / cellSize);
-                for (let r = minRow; r <= maxRow; r++) {
-                    if (isWall(col, r)) {
-                        nextX = col * cellSize - radius - 0.01;
-                        ball.vel.x = 0;
-                        break;
-                    }
-                }
-            } else if (ball.vel.x < 0) {
-                const col = Math.floor((nextX - radius) / cellSize);
-                for (let r = minRow; r <= maxRow; r++) {
-                    if (isWall(col, r)) {
-                        nextX = (col + 1) * cellSize + radius + 0.01;
-                        ball.vel.x = 0;
-                        break;
-                    }
-                }
-            }
-            const maxX = renderInfo.cols * cellSize - radius;
-            ball.pos.x = clamp(nextX, radius, maxX);
-
-            // Vertical move
-            let nextY = ball.pos.y + ball.vel.y * stepDt;
-            const minCol = Math.max(0, Math.floor((ball.pos.x - radius) / cellSize));
-            const maxCol = Math.min(renderInfo.cols - 1, Math.floor((ball.pos.x + radius) / cellSize));
-            if (ball.vel.y > 0) {
-                const row = Math.floor((nextY + radius) / cellSize);
-                for (let c = minCol; c <= maxCol; c++) {
-                    if (isWall(c, row)) {
-                        nextY = row * cellSize - radius - 0.01;
-                        ball.vel.y = 0;
-                        break;
-                    }
-                }
-            } else if (ball.vel.y < 0) {
-                const row = Math.floor((nextY - radius) / cellSize);
-                for (let c = minCol; c <= maxCol; c++) {
-                    if (isWall(c, row)) {
-                        nextY = (row + 1) * cellSize + radius + 0.01;
-                        ball.vel.y = 0;
-                        break;
-                    }
-                }
-            }
-            const maxY = renderInfo.rows * cellSize - radius;
-            ball.pos.y = clamp(nextY, radius, maxY);
+            const nextX = ball.pos.x + ball.vel.x * stepDt;
+            const nextY = ball.pos.y + ball.vel.y * stepDt;
+            const resolved = resolveCircleCollisions(nextX, nextY, radius, cellSize);
+            ball.pos.x = resolved.x;
+            ball.pos.y = resolved.y;
         }
 
         if (!goalReached && goalCell) {
@@ -190,6 +148,65 @@
                 showMessage('You reached the goal! Tilt or use arrows to play again.', 'success');
             }
         }
+    }
+
+    function resolveCircleCollisions(nextX, nextY, radius, cellSize) {
+        let cx = nextX;
+        let cy = nextY;
+        const maxIter = 4;
+        const maxX = renderInfo.cols * cellSize - radius;
+        const maxY = renderInfo.rows * cellSize - radius;
+        for (let iter = 0; iter < maxIter; iter++) {
+            let collided = false;
+            const minRow = Math.max(0, Math.floor((cy - radius) / cellSize));
+            const maxRow = Math.min(renderInfo.rows - 1, Math.floor((cy + radius) / cellSize));
+            const minCol = Math.max(0, Math.floor((cx - radius) / cellSize));
+            const maxCol = Math.min(renderInfo.cols - 1, Math.floor((cx + radius) / cellSize));
+            for (let row = minRow; row <= maxRow; row++) {
+                for (let col = minCol; col <= maxCol; col++) {
+                    if (!isWall(col, row)) continue;
+                    const x0 = col * cellSize;
+                    const y0 = row * cellSize;
+                    const x1 = x0 + cellSize;
+                    const y1 = y0 + cellSize;
+                    const closestX = clamp(cx, x0, x1);
+                    const closestY = clamp(cy, y0, y1);
+                    const dx = cx - closestX;
+                    const dy = cy - closestY;
+                    const distSq = dx * dx + dy * dy;
+                    const radSq = radius * radius;
+                    if (distSq < radSq - 1e-6) {
+                        const dist = Math.sqrt(Math.max(distSq, 0));
+                        let nx = 0;
+                        let ny = 0;
+                        if (dist > 0) {
+                            nx = dx / dist;
+                            ny = dy / dist;
+                        } else {
+                            const leftPen = Math.abs(cx - x0);
+                            const rightPen = Math.abs(x1 - cx);
+                            const topPen = Math.abs(cy - y0);
+                            const bottomPen = Math.abs(y1 - cy);
+                            const minPen = Math.min(leftPen, rightPen, topPen, bottomPen);
+                            if (minPen === leftPen) nx = -1; else if (minPen === rightPen) nx = 1; else if (minPen === topPen) ny = -1; else ny = 1;
+                        }
+                        const penetration = radius - dist + 0.01;
+                        cx += nx * penetration;
+                        cy += ny * penetration;
+                        const vDotN = ball.vel.x * nx + ball.vel.y * ny;
+                        if (vDotN < 0) {
+                            ball.vel.x -= vDotN * nx;
+                            ball.vel.y -= vDotN * ny;
+                        }
+                        collided = true;
+                    }
+                }
+            }
+            if (!collided) break;
+        }
+        cx = clamp(cx, radius, maxX);
+        cy = clamp(cy, radius, maxY);
+        return { x: cx, y: cy };
     }
 
     function drawBall() {
@@ -244,7 +261,7 @@
         sensorState.accel.y = normY * accelScale;
     }
 
-    function setupOrientation() {
+    function setupOrientation(userInitiated = false) {
         if (typeof DeviceOrientationEvent === 'undefined') {
             return;
         }
@@ -256,31 +273,36 @@
         };
 
         if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-            const requestOnce = () => {
-                DeviceOrientationEvent.requestPermission().then(result => {
-                    if (result === 'granted') attachListener();
-                }).catch(() => {});
-            };
-            document.addEventListener('click', requestOnce, { once: true });
-            document.addEventListener('touchstart', requestOnce, { once: true });
+            if (!userInitiated) return; // need an explicit tap on iOS
+            DeviceOrientationEvent.requestPermission().then(result => {
+                if (result === 'granted') attachListener();
+            }).catch(() => {});
         } else {
-            attachListener();
+            if (userInitiated || !isTouchDevice()) {
+                attachListener();
+            }
         }
     }
 
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keyState.left = true;
-        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keyState.right = true;
-        if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keyState.up = true;
-        if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keyState.down = true;
-    });
-
-    window.addEventListener('keyup', (e) => {
-        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keyState.left = false;
-        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keyState.right = false;
-        if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keyState.up = false;
-        if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keyState.down = false;
-    });
+    function promptToStartOnMobile() {
+        if (!startOverlay) {
+            setupOrientation(false);
+            return;
+        }
+        if (!isTouchDevice()) {
+            startOverlay.classList.add('d-none');
+            setupOrientation(false);
+            return;
+        }
+        startOverlay.classList.remove('d-none');
+        const begin = () => {
+            startOverlay.classList.add('d-none');
+            setupOrientation(true);
+            placeBallAtStart();
+        };
+        startOverlay.addEventListener('click', begin, { once: true });
+        startOverlay.addEventListener('touchstart', begin, { once: true });
+    }
 
     function drawGrid(grid) {
         try {
@@ -392,7 +414,7 @@
                 return;
             }
             renderLevel(found);
-            setupOrientation();
+            promptToStartOnMobile();
         })
         .catch(err => {
             console.error(err);

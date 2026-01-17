@@ -12,6 +12,9 @@
       .canvas-wrap canvas { display: block; }
       #levelCanvas { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); }
       #ballCanvas { position: absolute; inset: 0; pointer-events: none; background: transparent; border: none; }
+      .start-overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.28); backdrop-filter: blur(1px); z-index: 1050; }
+      .start-overlay:not(.d-none) { display: flex; }
+      .start-chip { background: #ffffff; color: #212529; padding: 12px 18px; border-radius: 999px; box-shadow: 0 6px 20px rgba(0,0,0,0.16); font-weight: 600; letter-spacing: 0.01em; }
     </style>
 </head>
 <body class="bg-light">
@@ -32,6 +35,10 @@
       </div>
 
     </div>
+  </div>
+
+  <div id="startOverlay" class="start-overlay d-none" role="button" aria-label="Tap to start sensors">
+    <div class="start-chip">Tap to start</div>
   </div>
 
   <script src="../../js/levels/level_render.js"></script>

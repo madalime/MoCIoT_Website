@@ -120,7 +120,7 @@ function createLevelCard(level) {
 
 // Load and render levels
 document.addEventListener('DOMContentLoaded', () => {
-    fetch('levels.json')
+    fetch('../js/levels.json')
         .then(response => {
             if (!response.ok) throw new Error('Network response was not ok: ' + response.status);
             return response.json();

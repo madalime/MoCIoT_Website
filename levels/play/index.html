@@ -8,7 +8,10 @@
     <style>
       /* Center canvas area */
       .play-area { display:flex; flex-direction:column; align-items:center; gap:1rem; padding:0; }
-      canvas { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); }
+      .canvas-wrap { position: relative; display: inline-block; }
+      .canvas-wrap canvas { display: block; }
+      #levelCanvas { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); }
+      #ballCanvas { position: absolute; inset: 0; pointer-events: none; background: transparent; border: none; }
     </style>
 </head>
 <body class="bg-light">
@@ -23,7 +26,10 @@
     <div id="messageArea"></div>
 
     <div class="play-area">
-      <canvas id="levelCanvas" role="img" aria-label="Level preview"></canvas>
+      <div class="canvas-wrap">
+        <canvas id="levelCanvas" role="img" aria-label="Level preview"></canvas>
+        <canvas id="ballCanvas" aria-hidden="true"></canvas>
+      </div>
 
     </div>
   </div>

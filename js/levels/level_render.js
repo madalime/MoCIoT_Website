@@ -59,55 +59,6 @@
         return { cols, rows, cellSize };
     }
 
-    function showMessage(text, type = 'danger') {
-        const m = getMessageArea();
-        if (m) {
-            m.innerHTML = `<div class="alert alert-${type}" role="alert">${text}</div>`;
-        } else {
-            // Fall back to console if message area is not present yet
-            if (type === 'danger' || type === 'warning') console.error(text); else console.log(text);
-        }
-    }
-
-    function clearMessage() {
-        const m = getMessageArea();
-        if (m) m.innerHTML = '';
-    }
-
-    function drawGrid(grid) {
-         // Delegate drawing to shared renderer with larger max size for the play canvas
-         try {
-            if (!grid || !grid.length) return;
-            const cnv = getCanvas();
-            if (!cnv) {
-                showMessage('Canvas element not found.', 'danger');
-                return;
-            }
-            const rows = grid.length;
-            const cols = grid[0].length || 1;
-
-            // Compute size based on container and desired max size
-            const maxWidth = Math.min(800, cnv.clientWidth);
-            const maxHeight = Math.min(600, cnv.clientHeight);
-            const renderedSize = window.LevelRenderer.renderGridToCanvas(cnv, grid, { maxWidth, maxHeight, minCell: 8, drawGridLines: true });
-
-            if (renderedSize) {
-                const { cellSize: renderedCellSize, rows: renderedRows } = renderedSize;
-
-                // Centering vertically if there's extra space
-                if (renderedRows < rows) {
-                    const topGap = Math.floor((maxHeight - renderedHeight) / 2);
-                    cnv.style.marginTop = `${topGap}px`;
-                } else {
-                    cnv.style.marginTop = '0px';
-                }
-            }
-         } catch (e) {
-             console.error('Render failed', e);
-             showMessage('Failed to render level: ' + e.message, 'danger');
-         }
-     }
-
     // expose on global
     window.LevelRenderer = window.LevelRenderer || {};
     window.LevelRenderer.renderGridToCanvas = renderGridToCanvas;

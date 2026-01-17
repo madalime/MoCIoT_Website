@@ -12,7 +12,7 @@
       <h1 class="mb-4">Marble Maze</h1>
 
       <div class="d-grid gap-3 col-6 w-100 mx-auto">
-        <a href="play.html" class="btn btn-primary btn-lg">Play</a>
+        <a href="levels/index.html" class="btn btn-primary btn-lg">Play</a>
         <button type="button" class="btn btn-secondary btn-lg" data-bs-toggle="modal" data-bs-target="#settingsModal">Settings</button>
         <button type="button" class="btn btn-outline-dark btn-lg" data-bs-toggle="modal" data-bs-target="#creditsModal">Credits</button>
       </div>
@@ -21,11 +21,11 @@
 
   <!-- Settings Modal -->
   <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="settingsLabel">Settings</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="close"></button>
         </div>
         <div class="modal-body">
           <form>
@@ -44,7 +44,6 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">close</button>
           <button type="button" class="btn btn-primary" data-bs-dismiss="modal">save</button>
         </div>
       </div>
@@ -53,7 +52,7 @@
 
   <!-- Credits Modal -->
   <div class="modal fade" id="creditsModal" tabindex="-1" aria-labelledby="creditsLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="creditsLabel">Credits</h5>
@@ -70,6 +69,6 @@
     </div>
   </div>
 
-  <script src="js/bootstrap.js"></script>
+  <script src="js/bootstrap/bootstrap.js"></script>
 </body>
 </html>

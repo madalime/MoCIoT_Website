@@ -40,8 +40,6 @@
     const LAST_ACTIVE_KEY = 'lockLastActiveTimestamp';
     const IDLE_THRESHOLD_MS = 20 * 60 * 1000; // 20 minutes
     let lastActive = Date.now();
-    let permReminderTimer = null;
-    let permReminderDone = false;
 
     function resetTimer() {
         timerState.startTime = 0;
@@ -106,7 +104,6 @@
     function markActive() {
         lastActive = Date.now();
         try { sessionStorage.setItem(LAST_ACTIVE_KEY, String(lastActive)); } catch (_) {}
-        schedulePermissionOverlay();
     }
 
     function getLastActive() {
@@ -822,22 +819,8 @@
     const permOverlay = document.getElementById('permissionOverlay');
     const permBtn = document.getElementById('permissionButton');
 
-    function clearPermReminderTimer() {
-        if (permReminderTimer) {
-            clearTimeout(permReminderTimer);
-            permReminderTimer = null;
-        }
-    }
-
-    function hidePermOverlay() {
-        if (permOverlay) permOverlay.classList.add('d-none');
-        permReminderDone = true;
-        clearPermReminderTimer();
-    }
-    function showPermOverlay() {
-        if (permReminderDone) return;
-        if (permOverlay) permOverlay.classList.remove('d-none');
-    }
+    function hidePermOverlay() { if (permOverlay) permOverlay.classList.add('d-none'); }
+    function showPermOverlay() { if (permOverlay) permOverlay.classList.remove('d-none'); }
 
     function requestMotionPermission(evt) {
         if (evt) evt.preventDefault();
@@ -866,31 +849,10 @@
     }
 
     const needsPermission = window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function';
-
-    function schedulePermissionOverlay() {
-        if (permReminderDone || !needsPermission || !permOverlay || !permBtn) return;
-        clearPermReminderTimer();
-        const idleFor = Date.now() - getLastActive();
-        const remaining = IDLE_THRESHOLD_MS - idleFor;
-        if (remaining <= 0) {
-            if (shouldShowLockReminder()) {
-                showPermOverlay();
-                noteLockReminderShown();
-            }
-            return;
-        }
-        permReminderTimer = setTimeout(() => {
-            if (!permReminderDone && shouldShowLockReminder()) {
-                showPermOverlay();
-                noteLockReminderShown();
-            }
-        }, remaining);
-    }
-
-    if (needsPermission && permOverlay && permBtn) {
+    if (needsPermission && permOverlay && permBtn && shouldShowLockReminder()) {
+        showPermOverlay();
         permBtn.addEventListener('click', requestMotionPermission, { passive: false });
         permBtn.addEventListener('touchend', requestMotionPermission, { passive: false });
-        schedulePermissionOverlay();
     }
 
  })();

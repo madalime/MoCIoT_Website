@@ -32,6 +32,9 @@
     // Timer state to track elapsed play time
     const timerState = { startTime: 0, elapsedMs: 0, running: false, started: false };
     let timerStartBound = false;
+    let orientationLockTried = false;
+    let landscapeOverlay = null;
+    let lockPrompt = null;
 
     function resetTimer() {
         timerState.startTime = 0;
@@ -65,6 +68,110 @@
         const hundredths = Math.floor((totalSeconds * 100) % 100);
         const pad = n => String(n).padStart(2, '0');
         return `${pad(minutes)}:${pad(seconds)}.${pad(hundredths)}`;
+    }
+
+    function isLandscape() {
+        if (screen.orientation && screen.orientation.type) {
+            return screen.orientation.type.startsWith('landscape');
+        }
+        return window.matchMedia('(orientation: landscape)').matches || window.innerWidth >= window.innerHeight;
+    }
+
+    function showLandscapeOverlay() {
+        if (landscapeOverlay) {
+            landscapeOverlay.style.display = 'flex';
+            return;
+        }
+        const overlayEl = document.createElement('div');
+        overlayEl.id = 'landscapeOverlay';
+        overlayEl.style.position = 'fixed';
+        overlayEl.style.inset = '0';
+        overlayEl.style.background = 'rgba(0,0,0,0.65)';
+        overlayEl.style.display = 'flex';
+        overlayEl.style.alignItems = 'center';
+        overlayEl.style.justifyContent = 'center';
+        overlayEl.style.zIndex = '2000';
+        overlayEl.style.color = '#fff';
+        overlayEl.style.textAlign = 'center';
+        overlayEl.innerHTML = '<div style="max-width:420px;padding:20px 24px;background:rgba(0,0,0,0.55);border-radius:16px;font-size:18px;line-height:1.5;">Please rotate your device to landscape to play.</div>';
+        document.body.appendChild(overlayEl);
+        landscapeOverlay = overlayEl;
+    }
+
+    function hideLandscapeOverlay() {
+        if (landscapeOverlay) landscapeOverlay.style.display = 'none';
+    }
+
+    function showLockPrompt() {
+        if (lockPrompt) {
+            lockPrompt.style.display = 'flex';
+            return;
+        }
+        const wrap = document.createElement('div');
+        wrap.id = 'lockPrompt';
+        wrap.style.position = 'fixed';
+        wrap.style.inset = '0';
+        wrap.style.pointerEvents = 'none';
+        wrap.style.zIndex = '1500';
+        wrap.style.display = 'flex';
+        wrap.style.justifyContent = 'center';
+        wrap.style.alignItems = 'flex-start';
+        wrap.style.paddingTop = '16px';
+
+        const card = document.createElement('div');
+        card.style.pointerEvents = 'auto';
+        card.style.background = '#fff';
+        card.style.borderRadius = '12px';
+        card.style.boxShadow = '0 8px 24px rgba(0,0,0,0.2)';
+        card.style.padding = '12px 14px';
+        card.style.display = 'flex';
+        card.style.gap = '12px';
+        card.style.alignItems = 'center';
+        card.style.maxWidth = '520px';
+
+        const text = document.createElement('div');
+        text.textContent = 'Please lock screen rotation to landscape for the best experience.';
+
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'btn btn-sm btn-outline-secondary';
+        closeBtn.textContent = 'Dismiss';
+        closeBtn.addEventListener('click', () => {
+            wrap.style.display = 'none';
+        });
+
+        card.appendChild(text);
+        card.appendChild(closeBtn);
+        wrap.appendChild(card);
+        document.body.appendChild(wrap);
+        lockPrompt = wrap;
+    }
+
+    function hideLockPrompt() {
+        if (lockPrompt) lockPrompt.style.display = 'none';
+    }
+
+    function handleLandscapeState() {
+        if (isLandscape()) {
+            hideLandscapeOverlay();
+        } else {
+            showLandscapeOverlay();
+        }
+    }
+
+    async function requestOrientationLock() {
+        if (orientationLockTried) return;
+        orientationLockTried = true;
+        hideLockPrompt();
+        if (!screen.orientation || typeof screen.orientation.lock !== 'function') {
+            showLockPrompt();
+            return;
+        }
+        try {
+            await screen.orientation.lock('landscape');
+        } catch (e) {
+            showLockPrompt();
+        }
     }
 
     function bindTimerStartOnce() {
@@ -171,11 +278,6 @@
         // focus the primary button for keyboard users
         const prim = el.querySelector('.btn-primary');
         if (prim && typeof prim.focus === 'function') prim.focus();
-    }
-
-
-    function isTouchDevice() {
-        return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
     }
 
     function showMessage(text, type = 'danger') {
@@ -412,9 +514,7 @@
     }
 
     function setupOrientation(userInitiated = false) {
-        if (typeof DeviceOrientationEvent === 'undefined') {
-            return;
-        }
+        if (typeof DeviceOrientationEvent === 'undefined') return;
 
         const attachListener = () => {
             if (sensorState.enabled) return;
@@ -428,28 +528,36 @@
                 if (result === 'granted') attachListener();
             }).catch(() => {});
         } else {
-            if (userInitiated || !isTouchDevice()) {
-                attachListener();
-            }
+            attachListener();
         }
     }
 
     function promptToStartOnMobile() {
+        const needsPermission = (typeof DeviceOrientationEvent !== 'undefined') && (typeof DeviceOrientationEvent.requestPermission === 'function');
+
+        handleLandscapeState();
+
         if (!startOverlay) {
-            setupOrientation(false);
+            setupOrientation(!needsPermission);
+            requestOrientationLock();
             bindTimerStartOnce();
             return;
         }
-        if (!isTouchDevice()) {
+
+        if (!needsPermission) {
             startOverlay.classList.add('d-none');
             setupOrientation(false);
+            requestOrientationLock();
             bindTimerStartOnce();
             return;
         }
+
         startOverlay.classList.remove('d-none');
+        bindTimerStartOnce();
         const begin = () => {
             startOverlay.classList.add('d-none');
             setupOrientation(true);
+            requestOrientationLock();
             placeBallAtStart();
             startTimer();
         };
@@ -584,5 +692,8 @@
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => drawGrid(currentLevel.grid), 150);
     });
+
+    window.addEventListener('orientationchange', handleLandscapeState);
+    window.matchMedia('(orientation: landscape)').addEventListener('change', handleLandscapeState);
 
 })();

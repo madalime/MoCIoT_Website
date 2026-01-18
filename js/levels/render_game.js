@@ -40,6 +40,7 @@
     const LAST_ACTIVE_KEY = 'lockLastActiveTimestamp';
     const IDLE_THRESHOLD_MS = 20 * 60 * 1000; // 20 minutes
     let lastActive = Date.now();
+    let sensorPermissionRequested = false;
 
     function resetTimer() {
         timerState.startTime = 0;
@@ -240,9 +241,41 @@
         }
     }
 
+    function requestSensorPermission() {
+        // iOS Safari requires an explicit user gesture to grant motion/orientation access
+        if (sensorPermissionRequested) return Promise.resolve(true);
+        sensorPermissionRequested = true;
+        const requests = [];
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            requests.push(DeviceOrientationEvent.requestPermission().catch(() => 'denied'));
+        }
+        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+            requests.push(DeviceMotionEvent.requestPermission().catch(() => 'denied'));
+        }
+        if (!requests.length) return Promise.resolve(true);
+        return Promise.all(requests).then(results => results.some(r => r === 'granted')).catch(() => false);
+    }
+
+    function ensureOrientationListener() {
+        if (sensorState.enabled) return;
+        sensorState.enabled = true;
+        window.addEventListener('deviceorientation', handleOrientation, true);
+    }
+
+    function enableSensorsWithPermission() {
+        return requestSensorPermission().then(granted => {
+            if (granted) {
+                ensureOrientationListener();
+            } else {
+                showMessage('Motion access denied. Enable sensors to play.', 'warning');
+            }
+        });
+    }
+
     function bindTimerStartOnce() {
         if (timerStartBound) return;
         const handler = () => {
+            enableSensorsWithPermission();
             if (animationPaused) {
                 resumeGame();
             } else {
@@ -633,7 +666,7 @@
 
         if (!needsPermission) {
             startOverlay.classList.add('d-none');
-            setupOrientation(false);
+            ensureOrientationListener();
             requestOrientationLock();
             bindTimerStartOnce();
             return;
@@ -643,7 +676,7 @@
         bindTimerStartOnce();
         const begin = () => {
             startOverlay.classList.add('d-none');
-            setupOrientation(true);
+            enableSensorsWithPermission();
             requestOrientationLock();
             placeBallAtStart();
             startTimer();

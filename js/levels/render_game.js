@@ -606,31 +606,12 @@
         window.addEventListener('deviceorientation', handleOrientation, true);
     };
 
-    function setupOrientation(userInitiated = false) {
+    function setupOrientation() {
         if (typeof DeviceOrientationEvent === 'undefined') {
-            alert('Device does not support orientation sensor.');
             return;
         }
 
-        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-            if (!userInitiated) {
-                alert('Orientation sensor requires user permission.');
-                return;
-            } // need an explicit tap on iOS
-            DeviceOrientationEvent.requestPermission().then(result => {
-                if (result === 'granted') {
-                    alert('Orientation sensor enabled. Tilt your device to control the ball.')
-                    attachOrientationListener();
-                }
-                else alert('Failed to enable orientation sensor. permissions:' + result);
-            }).catch(err => {
-                const msg = err && err.message ? err.message : String(err);
-                alert('Failed to enable orientation sensor: ' + msg);
-            });
-        } else {
-            alert('Device does not require permissions.');
-            attachOrientationListener();
-        }
+        attachOrientationListener();
     }
 
     function onOrientationPermissionGranted() {

@@ -147,12 +147,6 @@
     const COMPLETION_STORAGE_KEY = 'levelCompletionTimes';
 
     /**
-     * Key for storing the timestamp of the last lock reminder in sessionStorage.
-     * @type {string}
-     */
-    const LOCK_REMINDER_KEY = 'lockReminderTimestamp';
-
-    /**
      * Key for storing the timestamp of the last user activity in sessionStorage.
      * @type {string}
      */
@@ -290,10 +284,7 @@
      */
     function shouldShowLockReminder() {
         const now = Date.now();
-        const lastShownRaw = sessionStorage.getItem(LOCK_REMINDER_KEY);
-        const lastShown = lastShownRaw ? Number(lastShownRaw) : 0;
         const idleFor = now - getLastActive();
-        if (!lastShown) return true;
         return idleFor >= IDLE_THRESHOLD_MS;
     }
 
@@ -470,10 +461,6 @@
      */
     function resumeGame() {
         if (goalReached) return;
-        const idleFor = Date.now() - getLastActive();
-        if (idleFor >= IDLE_THRESHOLD_MS) {
-            try { sessionStorage.removeItem(LOCK_REMINDER_KEY); } catch (_) {}
-        }
         markActive();
         animationPaused = false;
         startLoop();

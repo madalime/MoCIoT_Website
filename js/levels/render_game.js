@@ -809,7 +809,12 @@
     const permBtn = document.getElementById('startOverlay');
 
     function hidePermOverlay() { if (permOverlay) permOverlay.classList.add('d-none'); }
-    function showPermOverlay() { if (permOverlay) permOverlay.classList.remove('d-none'); }
+    function showPermOverlay() {
+        if (permOverlay) {
+            permOverlay.classList.remove('d-none');
+            showMessage('Orientation permission required to play.', 'warning');
+        }
+    }
 
     function requestMotionPermission(evt) {
         if (evt) evt.preventDefault();

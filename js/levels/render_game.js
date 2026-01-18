@@ -499,6 +499,15 @@
         const btnGroup = document.createElement('div');
         btnGroup.className = 'd-flex gap-2 justify-content-center';
 
+        const restartBtn = document.createElement('button');
+        restartBtn.type = 'button';
+        restartBtn.className = 'btn btn-outline-secondary';
+        restartBtn.textContent = 'restart';
+        restartBtn.addEventListener('click', () => {
+            const base = location.pathname.split('?')[0];
+            location.href = base + '?level=' + requestedLevel;
+        });
+
         const overviewBtn = document.createElement('button');
         overviewBtn.type = 'button';
         overviewBtn.className = 'btn btn-outline-secondary';
@@ -1033,7 +1042,8 @@
             }
             const found = levels.find(l => Number(l.level) === Number(requestedLevel));
             if (!found) {
-                showMessage('Requested level ' + requestedLevel + ' not found.', 'warning');
+                alert('Congrats! You have completed all available levels. Returning to level overview.');
+                location.href = redirect = location.pathname.replace(/\/play\/[^/]*$/, '/index.html');
                 return;
             }
             if (!found.grid || !found.grid.length) {

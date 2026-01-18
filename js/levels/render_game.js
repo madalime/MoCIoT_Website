@@ -606,14 +606,6 @@
         window.addEventListener('deviceorientation', handleOrientation, true);
     };
 
-    function setupOrientation() {
-        if (typeof DeviceOrientationEvent === 'undefined') {
-            return;
-        }
-
-        attachOrientationListener();
-    }
-
     function onOrientationPermissionGranted() {
         attachOrientationListener();
         if (startOverlay) startOverlay.classList.add('d-none');
@@ -631,7 +623,6 @@
 
     function promptToStartOnMobile() {
         const needsPermission = (typeof DeviceOrientationEvent !== 'undefined') && (typeof DeviceOrientationEvent.requestPermission === 'function');
-
         handleLandscapeState();
         markActive();
 
@@ -640,15 +631,15 @@
                 bindTimerStartOnce();
                 return; // wait for HTML permission popup to trigger grant
             }
-            setupOrientation(false);
+            attachOrientationListener();
             requestOrientationLock();
             bindTimerStartOnce();
             return;
         }
 
         if (!needsPermission) {
-            startOverlay.classList.add('d-none');
-            setupOrientation(false);
+            startOverlay.classList.remove('d-none');
+            attachOrientationListener();
             requestOrientationLock();
             bindTimerStartOnce();
             return;
@@ -772,7 +763,6 @@
                 return;
             }
             renderLevel(found);
-            promptToStartOnMobile();
         })
         .catch(err => {
             console.error(err);
@@ -842,6 +832,8 @@
         showPermOverlay();
         permBtn.addEventListener('click', requestMotionPermission, { passive: false });
         permBtn.addEventListener('touchend', requestMotionPermission, { passive: false });
+    } else {
+        promptToStartOnMobile();
     }
 
  })();

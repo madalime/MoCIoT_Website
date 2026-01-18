@@ -805,16 +805,11 @@
     });
 
     // Uses distinct variable names to avoid clashing with existing `overlay` (ball canvas)
-    const permOverlay = document.getElementById('startOverlay');
-    const permBtn = document.getElementById('startOverlay');
+    const permOverlay = document.getElementById('permissionOverlay');
+    const permBtn = document.getElementById('permissionButton');
 
     function hidePermOverlay() { if (permOverlay) permOverlay.classList.add('d-none'); }
-    function showPermOverlay() {
-        if (permOverlay) {
-            permOverlay.classList.remove('d-none');
-            showMessage('Orientation permission required to play.', 'warning');
-        }
-    }
+    function showPermOverlay() { if (permOverlay) permOverlay.classList.remove('d-none'); }
 
     function requestMotionPermission(evt) {
         if (evt) evt.preventDefault();

@@ -622,8 +622,9 @@
                     attachListener();
                 }
                 else alert('Failed to enable orientation sensor. permissions:' + result);
-            }).catch(() => {
-                alert('Failed to enable orientation sensor.');
+            }).catch(err => {
+                const msg = err && err.message ? err.message : String(err);
+                alert('Failed to enable orientation sensor: ' + msg);
             });
         } else {
             alert('Device does not require permissions.');

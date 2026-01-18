@@ -35,6 +35,7 @@
     let orientationLockTried = false;
     let landscapeOverlay = null;
     let lockPrompt = null;
+    let orientationPermissionTriggered = false;
     const COMPLETION_STORAGE_KEY = 'levelCompletionTimes';
     const LOCK_REMINDER_KEY = 'lockReminderTimestamp';
     const LAST_ACTIVE_KEY = 'lockLastActiveTimestamp';
@@ -632,6 +633,25 @@
         }
     }
 
+    function handlePermissionFromGesture() {
+        if (orientationPermissionTriggered) return;
+        orientationPermissionTriggered = true;
+        setupOrientation(true);
+        if (startOverlay) startOverlay.classList.add('d-none');
+        requestOrientationLock();
+        placeBallAtStart();
+        startTimer();
+        markActive();
+    }
+
+    function armPermissionHandlers(targets) {
+        const opts = { once: true, passive: true };
+        targets.filter(Boolean).forEach(el => {
+            el.addEventListener('pointerdown', handlePermissionFromGesture, opts);
+            el.addEventListener('touchstart', handlePermissionFromGesture, opts);
+        });
+    }
+
     function promptToStartOnMobile() {
         const needsPermission = (typeof DeviceOrientationEvent !== 'undefined') && (typeof DeviceOrientationEvent.requestPermission === 'function');
 
@@ -639,7 +659,12 @@
         markActive();
 
         if (!startOverlay) {
-            setupOrientation(!needsPermission);
+            if (needsPermission) {
+                bindTimerStartOnce();
+                armPermissionHandlers([overlay, canvas, window]);
+                return;
+            }
+            setupOrientation(false);
             requestOrientationLock();
             bindTimerStartOnce();
             return;
@@ -655,16 +680,7 @@
 
         startOverlay.classList.remove('d-none');
         bindTimerStartOnce();
-        const begin = () => {
-            setupOrientation(true);
-            startOverlay.classList.add('d-none');
-            requestOrientationLock();
-            placeBallAtStart();
-            startTimer();
-            markActive();
-        };
-        startOverlay.addEventListener('click', begin, { once: true });
-        startOverlay.addEventListener('touchstart', begin, { once: true });
+        armPermissionHandlers([startOverlay, overlay, canvas, window]);
     }
 
     function drawGrid(grid) {

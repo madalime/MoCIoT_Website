@@ -599,24 +599,17 @@
         sensorState.accel.y = normY * accelScale;
     }
 
+    const attachOrientationListener = () => {
+        if (sensorState.enabled) return;
+        sensorState.enabled = true;
+        window.addEventListener('deviceorientation', handleOrientation, true);
+    };
+
     function setupOrientation(userInitiated = false) {
         if (typeof DeviceOrientationEvent === 'undefined') {
             alert('Device does not support orientation sensor.');
             return;
         }
-
-        function attachOrientationListener() {
-            if (sensorState.enabled) return;
-            sensorState.enabled = true;
-            orientationPermissionTriggered = true;
-            window.addEventListener('deviceorientation', handleOrientation, true);
-        }
-
-        const attachListener = () => {
-            if (sensorState.enabled) return;
-            sensorState.enabled = true;
-            window.addEventListener('deviceorientation', handleOrientation, true);
-        };
 
         if (typeof DeviceOrientationEvent.requestPermission === 'function') {
             if (!userInitiated) {

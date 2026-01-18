@@ -29,8 +29,62 @@
 
     const sensorState = { accel: { x: 0, y: 0 }, enabled: false, available: false };
 
+    // Timer state to track elapsed play time
+    const timerState = { startTime: 0, elapsedMs: 0, running: false, started: false };
+    let timerStartBound = false;
+
+    function resetTimer() {
+        timerState.startTime = 0;
+        timerState.elapsedMs = 0;
+        timerState.running = false;
+        timerState.started = false;
+    }
+
+    function startTimer() {
+        if (timerState.running) return;
+        timerState.startTime = performance.now();
+        timerState.running = true;
+        timerState.started = true;
+    }
+
+    function stopTimer() {
+        if (!timerState.running) return;
+        timerState.elapsedMs += performance.now() - timerState.startTime;
+        timerState.running = false;
+    }
+
+    function getElapsedMs() {
+        if (!timerState.running) return timerState.elapsedMs;
+        return timerState.elapsedMs + (performance.now() - timerState.startTime);
+    }
+
+    function formatElapsed(ms) {
+        const totalSeconds = ms / 1000;
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = Math.floor(totalSeconds % 60);
+        const hundredths = Math.floor((totalSeconds * 100) % 100);
+        const pad = n => String(n).padStart(2, '0');
+        return `${pad(minutes)}:${pad(seconds)}.${pad(hundredths)}`;
+    }
+
+    function bindTimerStartOnce() {
+        if (timerStartBound) return;
+        const handler = () => {
+            startTimer();
+        };
+        const options = { once: true, passive: true };
+        if (overlay) overlay.addEventListener('pointerdown', handler, options);
+        if (canvas) canvas.addEventListener('pointerdown', handler, options);
+        // Fallback for any other interaction on the page
+        window.addEventListener('pointerdown', handler, options);
+        timerStartBound = true;
+    }
+
     function pauseGame() {
         animationPaused = true;
+        stopTimer();
+        ball.vel.x = 0;
+        ball.vel.y = 0;
         if (animationId) {
             cancelAnimationFrame(animationId);
             animationId = null;
@@ -89,6 +143,10 @@
         btnGroup.appendChild(nextBtn);
 
         body.appendChild(title);
+        const timeEl = document.createElement('p');
+        timeEl.id = 'winModalTime';
+        timeEl.className = 'mb-3 text-muted';
+        body.appendChild(timeEl);
         body.appendChild(btnGroup);
         card.appendChild(body);
         overlayEl.appendChild(card);
@@ -96,8 +154,17 @@
         document.body.appendChild(overlayEl);
     }
 
+    function updateWinModalTime() {
+        const el = document.getElementById('winModalTime');
+        if (!el) return;
+        const ms = getElapsedMs();
+        el.textContent = 'Time: ' + formatElapsed(ms);
+    }
+
     function showWinModal() {
         createWinModal();
+        stopTimer();
+        updateWinModalTime();
         const el = document.getElementById('winModalOverlay');
         if (!el) return;
         el.style.display = 'flex';
@@ -218,7 +285,6 @@
             const cellC = Math.floor(ball.pos.x / cellSize);
             if (cellR === goalCell.r && cellC === goalCell.c) {
                 goalReached = true;
-                // Pause game loop and show a centered modal with options
                 pauseGame();
                 showWinModal();
             }
@@ -300,17 +366,26 @@
     }
 
     function loop(timestamp) {
+        if (animationPaused) {
+            animationId = null;
+            return;
+        }
         if (!currentLevel || !renderInfo) return;
         if (lastFrameTime === null) lastFrameTime = timestamp;
         const dt = Math.min(0.032, Math.max(0.001, (timestamp - lastFrameTime) / 1000));
         lastFrameTime = timestamp;
         stepPhysics(dt);
         drawBall();
+        if (animationPaused) {
+            animationId = null;
+            return;
+        }
         animationId = requestAnimationFrame(loop);
     }
 
     function startLoop() {
         if (animationId) cancelAnimationFrame(animationId);
+        animationPaused = false;
         lastFrameTime = null;
         animationId = requestAnimationFrame(loop);
     }
@@ -362,11 +437,13 @@
     function promptToStartOnMobile() {
         if (!startOverlay) {
             setupOrientation(false);
+            bindTimerStartOnce();
             return;
         }
         if (!isTouchDevice()) {
             startOverlay.classList.add('d-none');
             setupOrientation(false);
+            bindTimerStartOnce();
             return;
         }
         startOverlay.classList.remove('d-none');
@@ -374,6 +451,7 @@
             startOverlay.classList.add('d-none');
             setupOrientation(true);
             placeBallAtStart();
+            startTimer();
         };
         startOverlay.addEventListener('click', begin, { once: true });
         startOverlay.addEventListener('touchstart', begin, { once: true });
@@ -451,6 +529,9 @@
     function renderLevel(levelObj) {
         if (!levelObj) return;
         currentLevel = levelObj;
+        resetTimer();
+        timerStartBound = false;
+        bindTimerStartOnce();
         clearMessage();
         const specials = findSpecialCells(levelObj.grid);
         startCell = specials.start;

@@ -75,7 +75,7 @@
         return `${pad(minutes)}:${pad(seconds)}.${pad(hundredths)}`;
     }
 
-    /*function loadCompletionTimes() {
+    function loadCompletionTimes() {
         try {
             const raw = localStorage.getItem(COMPLETION_STORAGE_KEY);
             if (!raw) return {};
@@ -99,7 +99,7 @@
             times[levelNumber] = Math.round(ms);
             persistCompletionTimes(times);
         }
-    }*/
+    }
 
     function markActive() {
         lastActive = Date.now();

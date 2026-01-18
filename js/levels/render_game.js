@@ -920,23 +920,10 @@
      * Prompts the user to start the game on mobile devices, handling permission and orientation.
      */
     function promptToStartOnMobile() {
-        const needsPermission = (typeof DeviceOrientationEvent !== 'undefined') && (typeof DeviceOrientationEvent.requestPermission === 'function');
         handleLandscapeState();
         markActive();
 
         if (!startOverlay) {
-            if (needsPermission) {
-                bindTimerStartOnce();
-                return; // wait for HTML permission popup to trigger grant
-            }
-            attachOrientationListener();
-            requestOrientationLock();
-            bindTimerStartOnce();
-            return;
-        }
-
-        if (!needsPermission) {
-            startOverlay.classList.remove('d-none');
             attachOrientationListener();
             requestOrientationLock();
             bindTimerStartOnce();
@@ -944,8 +931,12 @@
         }
 
         startOverlay.classList.add('d-none');
-        bindTimerStartOnce();
-        // HTML permission popup will handle permission and call back into us
+        startOverlay.addEventListener('click', () => {
+            startOverlay.classList.remove('d-none');
+            attachOrientationListener();
+            requestOrientationLock();
+            bindTimerStartOnce();
+        })
     }
 
     /**

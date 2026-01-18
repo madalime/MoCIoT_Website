@@ -611,12 +611,16 @@
         if (typeof DeviceOrientationEvent.requestPermission === 'function') {
             if (!userInitiated) return; // need an explicit tap on iOS
             DeviceOrientationEvent.requestPermission().then(result => {
-                if (result === 'granted') attachListener();
+                if (result === 'granted') {
+                    alert('Orientation sensor enabled. Tilt your device to control the ball.')
+                    attachListener();
+                }
                 else alert('Failed to enable orientation sensor. permissions:' + result);
             }).catch(() => {
-                alert('Failed to enable orientation sensor. Please allow access to device orientation in your browser settings.');
+                alert('Failed to enable orientation sensor.');
             });
         } else {
+            alert('Device does not require permissions.');
             attachListener();
         }
     }

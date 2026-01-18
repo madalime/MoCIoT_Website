@@ -622,6 +622,7 @@
         placeBallAtStart();
         startTimer();
         markActive();
+        requestMotionPermission();
     }
 
     function onOrientationPermissionDenied(reason) {
@@ -843,7 +844,6 @@
         showPermOverlay();
         permBtn.addEventListener('click', requestMotionPermission, { passive: false });
         permBtn.addEventListener('touchend', requestMotionPermission, { passive: false });
-        requestMotionPermission()
     }
 
  })();

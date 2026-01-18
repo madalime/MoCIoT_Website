@@ -917,9 +917,9 @@
             return;
         }
 
-        startOverlay.classList.add('d-none');
+        startOverlay.classList.remove('d-none');
         startOverlay.addEventListener('click', () => {
-            startOverlay.classList.remove('d-none');
+            startOverlay.classList.add('d-none');
             attachOrientationListener();
             requestOrientationLock();
             bindTimerStartOnce();

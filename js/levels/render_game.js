@@ -622,7 +622,6 @@
         placeBallAtStart();
         startTimer();
         markActive();
-        requestMotionPermission();
     }
 
     function onOrientationPermissionDenied(reason) {
@@ -840,7 +839,7 @@
     }
 
     const needsPermission = window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function';
-    if (needsPermission && permOverlay && permBtn && shouldShowLockReminder) {
+    if (needsPermission && permOverlay && permBtn && shouldShowLockReminder()) {
         showPermOverlay();
         permBtn.addEventListener('click', requestMotionPermission, { passive: false });
         permBtn.addEventListener('touchend', requestMotionPermission, { passive: false });

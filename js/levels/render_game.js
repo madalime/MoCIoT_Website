@@ -285,6 +285,7 @@
     function shouldShowLockReminder() {
         const now = Date.now();
         const idleFor = now - getLastActive();
+        alert('Idle for ' + idleFor + '.' + idleFor >= IDLE_THRESHOLD_MS);
         return idleFor >= IDLE_THRESHOLD_MS;
     }
 

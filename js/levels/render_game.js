@@ -169,6 +169,7 @@
             noteLockReminderShown();
             return;
         }
+        pauseGame();
         const wrap = document.createElement('div');
         wrap.id = 'lockPrompt';
         wrap.style.position = 'fixed';

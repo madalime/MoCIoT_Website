@@ -1043,8 +1043,7 @@
             }
             const found = levels.find(l => Number(l.level) === Number(requestedLevel));
             if (!found) {
-                alert('Congrats! You have completed all available levels. Returning to level overview.');
-                location.href = redirect = location.pathname.replace(/\/play\/[^/]*$/, '/index.html');
+                location.href = location.pathname.replace(/\/play\/[^/]*$/, '/completed.html');
                 return;
             }
             if (!found.grid || !found.grid.length) {

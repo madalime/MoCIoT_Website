@@ -87,7 +87,7 @@ function createLevelCard(level, completionTimes) {
     rightWrap.className = 'd-flex align-items-center ms-auto';
 
     // Completed badge (if present) is wrapped in an element with h5 sizing so it matches visually
-    if (completionTimes && completionTimes[level.level] != null) {
+    /*if (completionTimes && completionTimes[level.level] != null) {
         const doneWrapper = document.createElement('span');
         doneWrapper.className = 'h5 mb-0';
 
@@ -97,7 +97,7 @@ function createLevelCard(level, completionTimes) {
 
         doneWrapper.appendChild(done);
         rightWrap.appendChild(doneWrapper);
-    }
+    }*/
 
     titleRow.appendChild(leftWrap);
     titleRow.appendChild(rightWrap);

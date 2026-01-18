@@ -857,7 +857,7 @@
 
     const needsPermission = window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function';
     alert('needsPermission=' + needsPermission + ', permOverlay=' + Boolean(permOverlay) + ', permBtn=' + Boolean(permBtn));
-    if (needsPermission && permOverlay && permBtn) {
+    if (needsPermission && permOverlay && permBtn && shouldShowLockReminder) {
         showPermOverlay();
         permBtn.addEventListener('click', requestMotionPermission, { passive: false });
         permBtn.addEventListener('touchend', requestMotionPermission, { passive: false });

@@ -138,6 +138,7 @@
         closeBtn.textContent = 'Dismiss';
         closeBtn.addEventListener('click', () => {
             wrap.style.display = 'none';
+            resumeGame();
         });
 
         card.appendChild(text);
@@ -154,8 +155,10 @@
     function handleLandscapeState() {
         if (isLandscape()) {
             hideLandscapeOverlay();
+            if (animationPaused) resumeGame();
         } else {
             showLandscapeOverlay();
+            pauseGame();
         }
     }
 
@@ -165,12 +168,14 @@
         hideLockPrompt();
         if (!screen.orientation || typeof screen.orientation.lock !== 'function') {
             showLockPrompt();
+            pauseGame();
             return;
         }
         try {
             await screen.orientation.lock('landscape');
         } catch (e) {
             showLockPrompt();
+            pauseGame();
         }
     }
 
@@ -196,6 +201,13 @@
             cancelAnimationFrame(animationId);
             animationId = null;
         }
+    }
+
+    function resumeGame() {
+        if (goalReached) return;
+        animationPaused = false;
+        startLoop();
+        startTimer();
     }
 
     function createWinModal() {

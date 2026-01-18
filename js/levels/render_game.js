@@ -35,7 +35,6 @@
     let orientationLockTried = false;
     let landscapeOverlay = null;
     let lockPrompt = null;
-    let orientationPermissionTriggered = false;
     const COMPLETION_STORAGE_KEY = 'levelCompletionTimes';
     const LOCK_REMINDER_KEY = 'lockReminderTimestamp';
     const LAST_ACTIVE_KEY = 'lockLastActiveTimestamp';
@@ -606,6 +605,13 @@
             return;
         }
 
+        function attachOrientationListener() {
+            if (sensorState.enabled) return;
+            sensorState.enabled = true;
+            orientationPermissionTriggered = true;
+            window.addEventListener('deviceorientation', handleOrientation, true);
+        }
+
         const attachListener = () => {
             if (sensorState.enabled) return;
             sensorState.enabled = true;
@@ -620,7 +626,7 @@
             DeviceOrientationEvent.requestPermission().then(result => {
                 if (result === 'granted') {
                     alert('Orientation sensor enabled. Tilt your device to control the ball.')
-                    attachListener();
+                    attachOrientationListener();
                 }
                 else alert('Failed to enable orientation sensor. permissions:' + result);
             }).catch(err => {
@@ -629,14 +635,12 @@
             });
         } else {
             alert('Device does not require permissions.');
-            attachListener();
+            attachOrientationListener();
         }
     }
 
-    function handlePermissionFromGesture() {
-        if (orientationPermissionTriggered) return;
-        orientationPermissionTriggered = true;
-        setupOrientation(true);
+    function onOrientationPermissionGranted() {
+        attachOrientationListener();
         if (startOverlay) startOverlay.classList.add('d-none');
         requestOrientationLock();
         placeBallAtStart();
@@ -644,14 +648,16 @@
         markActive();
     }
 
-    function armPermissionHandlers(targets) {
-        const opts = { once: true };
-        targets.filter(Boolean).forEach(el => {
-            el.addEventListener('pointerdown', handlePermissionFromGesture, opts);
-            el.addEventListener('touchstart', handlePermissionFromGesture, opts);
-            el.addEventListener('touchend', handlePermissionFromGesture, opts);
-            el.addEventListener('click', handlePermissionFromGesture, opts);
-        });
+    function onOrientationPermissionDenied(reason) {
+        const suffix = reason ? (': ' + reason) : '';
+        showMessage('Orientation permission denied' + suffix, 'warning');
+        if (startOverlay) startOverlay.classList.add('d-none');
+    }
+
+    function handlePermissionFromGesture() {
+        if (orientationPermissionTriggered) return;
+        orientationPermissionTriggered = true;
+        setupOrientation(true);
     }
 
     function promptToStartOnMobile() {
@@ -663,8 +669,7 @@
         if (!startOverlay) {
             if (needsPermission) {
                 bindTimerStartOnce();
-                armPermissionHandlers([overlay, canvas, window]);
-                return;
+                return; // wait for HTML permission popup to trigger grant
             }
             setupOrientation(false);
             requestOrientationLock();
@@ -680,9 +685,9 @@
             return;
         }
 
-        startOverlay.classList.remove('d-none');
+        startOverlay.classList.add('d-none');
         bindTimerStartOnce();
-        armPermissionHandlers([startOverlay, overlay, canvas, window]);
+        // HTML permission popup will handle permission and call back into us
     }
 
     function drawGrid(grid) {
@@ -817,5 +822,10 @@
     window.matchMedia('(orientation: landscape)').addEventListener('change', handleLandscapeState);
     window.addEventListener('pointerdown', markActive, { passive: true });
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') markActive(); });
+
+    window.LevelGame = Object.assign(window.LevelGame || {}, {
+        orientationGranted: onOrientationPermissionGranted,
+        orientationDenied: onOrientationPermissionDenied,
+    });
 
  })();

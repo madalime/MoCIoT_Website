@@ -42,9 +42,59 @@
     <div class="start-chip">Tap to start</div>
   </div>
 
-  <script src="../../js/levels/level_render.js"></script>
-  <script src="../../js/levels/render_game.js"></script>
+  <div id="permissionOverlay" class="start-overlay d-none" role="dialog" aria-label="Device orientation permission">
+    <div class="start-chip text-center" style="display:flex;flex-direction:column;gap:10px;align-items:center;">
+      <div>Allow motion sensors to control the ball?</div>
+      <button id="permissionButton" type="button" class="btn btn-primary">Allow motion access</button>
+    </div>
+  </div>
 
-  <script src="../../js/bootstrap/bootstrap.js"></script>
-</body>
+   <script src="../../js/levels/level_render.js"></script>
+   <script src="../../js/levels/render_game.js"></script>
+
+   <script>
+     (function() {
+       const overlay = document.getElementById('permissionOverlay');
+       const btn = document.getElementById('permissionButton');
+
+       function hideOverlay() { overlay.classList.add('d-none'); }
+       function showOverlay() { overlay.classList.remove('d-none'); }
+
+       function requestMotionPermission(evt) {
+         if (evt) evt.preventDefault();
+         if (!window.DeviceOrientationEvent || typeof DeviceOrientationEvent.requestPermission !== 'function') {
+           hideOverlay();
+           return;
+         }
+         DeviceOrientationEvent.requestPermission().then(result => {
+           if (result === 'granted') {
+             hideOverlay();
+             if (window.LevelGame && typeof window.LevelGame.orientationGranted === 'function') {
+               window.LevelGame.orientationGranted();
+             }
+           } else {
+             hideOverlay();
+             if (window.LevelGame && typeof window.LevelGame.orientationDenied === 'function') {
+               window.LevelGame.orientationDenied(result);
+             }
+           }
+         }).catch(err => {
+           hideOverlay();
+           if (window.LevelGame && typeof window.LevelGame.orientationDenied === 'function') {
+             window.LevelGame.orientationDenied(err && err.message ? err.message : String(err));
+           }
+         });
+       }
+
+       const needsPermission = window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function';
+       if (needsPermission && overlay && btn) {
+         showOverlay();
+         btn.addEventListener('click', requestMotionPermission, { passive: false });
+         btn.addEventListener('touchend', requestMotionPermission, { passive: false });
+       }
+     })();
+   </script>
+
+   <script src="../../js/bootstrap/bootstrap.js"></script>
+ </body>
 </html>

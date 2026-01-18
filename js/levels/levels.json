@@ -2,8 +2,6 @@
   {
     "level": 1,
     "difficulty": "Easy",
-    "hasCompleted": false,
-    "high_score": 0,
     "grid": [
       "#########",
       "#S......#",
@@ -17,8 +15,6 @@
   {
     "level": 2,
     "difficulty": "Medium",
-    "hasCompleted": false,
-    "high_score": 0,
     "grid": [
         "################################",
         "#S.............................#",
@@ -41,8 +37,6 @@
   {
     "level": 3,
     "difficulty": "Easy",
-    "hasCompleted": false,
-    "high_score": 0,
     "grid": [
       "#########",
       "#S......#",
@@ -56,8 +50,6 @@
   {
     "level": 4,
     "difficulty": "Easy",
-    "hasCompleted": true,
-    "high_score": 300,
     "grid": [
       "#########",
       "#S......#",

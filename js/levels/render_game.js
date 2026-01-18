@@ -35,6 +35,11 @@
     let orientationLockTried = false;
     let landscapeOverlay = null;
     let lockPrompt = null;
+    const COMPLETION_STORAGE_KEY = 'levelCompletionTimes';
+    const LOCK_REMINDER_KEY = 'lockReminderTimestamp';
+    const LAST_ACTIVE_KEY = 'lockLastActiveTimestamp';
+    const IDLE_THRESHOLD_MS = 20 * 60 * 1000; // 20 minutes
+    let lastActive = Date.now();
 
     function resetTimer() {
         timerState.startTime = 0;
@@ -70,6 +75,61 @@
         return `${pad(minutes)}:${pad(seconds)}.${pad(hundredths)}`;
     }
 
+    function loadCompletionTimes() {
+        try {
+            const raw = localStorage.getItem(COMPLETION_STORAGE_KEY);
+            if (!raw) return {};
+            const parsed = JSON.parse(raw);
+            return (parsed && typeof parsed === 'object') ? parsed : {};
+        } catch (_) {
+            return {};
+        }
+    }
+
+    function persistCompletionTimes(times) {
+        try { localStorage.setItem(COMPLETION_STORAGE_KEY, JSON.stringify(times)); } catch (_) {}
+    }
+
+    function saveCompletionTime(levelNumber, elapsedMs) {
+        const ms = Number(elapsedMs);
+        if (!Number.isFinite(ms) || ms < 0) return;
+        const times = loadCompletionTimes();
+        const existing = Number(times[levelNumber]);
+        if (!Number.isFinite(existing) || ms < existing) {
+            times[levelNumber] = Math.round(ms);
+            persistCompletionTimes(times);
+        }
+    }
+
+    function markActive() {
+        lastActive = Date.now();
+        try { sessionStorage.setItem(LAST_ACTIVE_KEY, String(lastActive)); } catch (_) {}
+    }
+
+    function getLastActive() {
+        const stored = sessionStorage.getItem(LAST_ACTIVE_KEY);
+        if (stored) {
+            const num = Number(stored);
+            if (!Number.isNaN(num)) {
+                lastActive = num;
+            }
+        }
+        return lastActive;
+    }
+
+    function shouldShowLockReminder() {
+        const now = Date.now();
+        const lastShownRaw = sessionStorage.getItem(LOCK_REMINDER_KEY);
+        const lastShown = lastShownRaw ? Number(lastShownRaw) : 0;
+        const idleFor = now - getLastActive();
+        if (!lastShown) return true;
+        return idleFor >= IDLE_THRESHOLD_MS;
+    }
+
+    function noteLockReminderShown() {
+        try { sessionStorage.setItem(LOCK_REMINDER_KEY, String(Date.now())); } catch (_) {}
+    }
+
     function isLandscape() {
         if (screen.orientation && screen.orientation.type) {
             return screen.orientation.type.startsWith('landscape');
@@ -103,8 +163,10 @@
     }
 
     function showLockPrompt() {
+        if (!shouldShowLockReminder()) return;
         if (lockPrompt) {
             lockPrompt.style.display = 'flex';
+            noteLockReminderShown();
             return;
         }
         const wrap = document.createElement('div');
@@ -146,6 +208,7 @@
         wrap.appendChild(card);
         document.body.appendChild(wrap);
         lockPrompt = wrap;
+        noteLockReminderShown();
     }
 
     function hideLockPrompt() {
@@ -183,6 +246,7 @@
         if (timerStartBound) return;
         const handler = () => {
             startTimer();
+            markActive();
         };
         const options = { once: true, passive: true };
         if (overlay) overlay.addEventListener('pointerdown', handler, options);
@@ -205,6 +269,11 @@
 
     function resumeGame() {
         if (goalReached) return;
+        const idleFor = Date.now() - getLastActive();
+        if (idleFor >= IDLE_THRESHOLD_MS) {
+            try { sessionStorage.removeItem(LOCK_REMINDER_KEY); } catch (_) {}
+        }
+        markActive();
         animationPaused = false;
         startLoop();
         startTimer();
@@ -283,6 +352,8 @@
     function showWinModal() {
         createWinModal();
         stopTimer();
+        const ms = getElapsedMs();
+        saveCompletionTime(requestedLevel, ms);
         updateWinModalTime();
         const el = document.getElementById('winModalOverlay');
         if (!el) return;
@@ -506,6 +577,7 @@
 
     function handleOrientation(event) {
         sensorState.available = true;
+        markActive();
         const gamma = clamp(event.gamma || 0, -50, 50); // left-right
         const beta = clamp(event.beta || 0, -50, 50); // front-back
         const angle = (window.screen && window.screen.orientation && window.screen.orientation.angle) || window.orientation || 0;
@@ -548,6 +620,7 @@
         const needsPermission = (typeof DeviceOrientationEvent !== 'undefined') && (typeof DeviceOrientationEvent.requestPermission === 'function');
 
         handleLandscapeState();
+        markActive();
 
         if (!startOverlay) {
             setupOrientation(!needsPermission);
@@ -572,6 +645,7 @@
             requestOrientationLock();
             placeBallAtStart();
             startTimer();
+            markActive();
         };
         startOverlay.addEventListener('click', begin, { once: true });
         startOverlay.addEventListener('touchstart', begin, { once: true });
@@ -707,5 +781,7 @@
 
     window.addEventListener('orientationchange', handleLandscapeState);
     window.matchMedia('(orientation: landscape)').addEventListener('change', handleLandscapeState);
+    window.addEventListener('pointerdown', markActive, { passive: true });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') markActive(); });
 
-})();
+ })();

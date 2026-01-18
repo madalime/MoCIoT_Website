@@ -1,3 +1,26 @@
+const COMPLETION_STORAGE_KEY = 'levelCompletionTimes';
+
+function loadCompletionTimes() {
+    try {
+        const raw = localStorage.getItem(COMPLETION_STORAGE_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return (parsed && typeof parsed === 'object') ? parsed : {};
+    } catch (_) {
+        return {};
+    }
+}
+
+function formatMs(ms) {
+    if (ms == null) return '-';
+    const totalSeconds = ms / 1000;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+    const hundredths = Math.floor((totalSeconds * 100) % 100);
+    const pad = n => String(n).padStart(2, '0');
+    return `${pad(minutes)}:${pad(seconds)}.${pad(hundredths)}`;
+}
+
 // Helper to map difficulty to badge class
 function difficultyBadgeClass(diff) {
     switch ((diff || '').toLowerCase()) {
@@ -12,7 +35,7 @@ function difficultyBadgeClass(diff) {
     }
 }
 
-function createLevelCard(level) {
+function createLevelCard(level, completionTimes) {
     const col = document.createElement('div');
     col.className = 'col-12 col-sm-6 col-md-4 mb-4 d-flex';
 
@@ -64,7 +87,7 @@ function createLevelCard(level) {
     rightWrap.className = 'd-flex align-items-center ms-auto';
 
     // Completed badge (if present) is wrapped in an element with h5 sizing so it matches visually
-    if (level.hasCompleted) {
+    if (completionTimes && completionTimes[level.level] != null) {
         const doneWrapper = document.createElement('span');
         doneWrapper.className = 'h5 mb-0';
 
@@ -81,7 +104,8 @@ function createLevelCard(level) {
 
     const meta = document.createElement('div');
     meta.className = 'mb-2 text-muted small';
-    meta.textContent = 'High score: ' + (level.high_score !== 0 ? level.high_score + 's' : '-');
+    const ms = completionTimes ? completionTimes[level.level] : null;
+    meta.textContent = 'Best time: ' + formatMs(ms);
 
     // Make the whole card act as the play action instead of a separate button.
     // Build the target URL once.
@@ -133,8 +157,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            const completionTimes = loadCompletionTimes();
+
             levels.forEach(level => {
-                const cardCol = createLevelCard(level);
+                const cardCol = createLevelCard(level, completionTimes);
                 row.appendChild(cardCol);
             });
         })

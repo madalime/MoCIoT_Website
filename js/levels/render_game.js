@@ -656,8 +656,8 @@
         startOverlay.classList.remove('d-none');
         bindTimerStartOnce();
         const begin = () => {
-            startOverlay.classList.add('d-none');
             setupOrientation(true);
+            startOverlay.classList.add('d-none');
             requestOrientationLock();
             placeBallAtStart();
             startTimer();

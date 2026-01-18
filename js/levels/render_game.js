@@ -647,12 +647,6 @@
         if (startOverlay) startOverlay.classList.add('d-none');
     }
 
-    function handlePermissionFromGesture() {
-        if (orientationPermissionTriggered) return;
-        orientationPermissionTriggered = true;
-        setupOrientation(true);
-    }
-
     function promptToStartOnMobile() {
         const needsPermission = (typeof DeviceOrientationEvent !== 'undefined') && (typeof DeviceOrientationEvent.requestPermission === 'function');
 
@@ -820,5 +814,45 @@
         orientationGranted: onOrientationPermissionGranted,
         orientationDenied: onOrientationPermissionDenied,
     });
+
+    // Uses distinct variable names to avoid clashing with existing `overlay` (ball canvas)
+    const permOverlay = document.getElementById('permissionOverlay');
+    const permBtn = document.getElementById('permissionButton');
+
+    function hidePermOverlay() { if (permOverlay) permOverlay.classList.add('d-none'); }
+    function showPermOverlay() { if (permOverlay) permOverlay.classList.remove('d-none'); }
+
+    function requestMotionPermission(evt) {
+        if (evt) evt.preventDefault();
+        if (!window.DeviceOrientationEvent || typeof DeviceOrientationEvent.requestPermission !== 'function') {
+            hidePermOverlay();
+            return;
+        }
+        DeviceOrientationEvent.requestPermission().then(result => {
+            if (result === 'granted') {
+                hidePermOverlay();
+                if (window.LevelGame && typeof window.LevelGame.orientationGranted === 'function') {
+                    window.LevelGame.orientationGranted();
+                }
+            } else {
+                hidePermOverlay();
+                if (window.LevelGame && typeof window.LevelGame.orientationDenied === 'function') {
+                    window.LevelGame.orientationDenied(result);
+                }
+            }
+        }).catch(err => {
+            hidePermOverlay();
+            if (window.LevelGame && typeof window.LevelGame.orientationDenied === 'function') {
+                window.LevelGame.orientationDenied(err && err.message ? err.message : String(err));
+            }
+        });
+    }
+
+    const needsPermission = window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function';
+    if (needsPermission && permOverlay && permBtn) {
+        showPermOverlay();
+        permBtn.addEventListener('click', requestMotionPermission, { passive: false });
+        permBtn.addEventListener('touchend', requestMotionPermission, { passive: false });
+    }
 
  })();

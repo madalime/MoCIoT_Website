@@ -52,48 +52,7 @@
    <script src="../../js/levels/level_render.js"></script>
    <script src="../../js/levels/render_game.js"></script>
 
-   <script>
-     (function() {
-       const overlay = document.getElementById('permissionOverlay');
-       const btn = document.getElementById('permissionButton');
-
-       function hideOverlay() { overlay.classList.add('d-none'); }
-       function showOverlay() { overlay.classList.remove('d-none'); }
-
-       function requestMotionPermission(evt) {
-         if (evt) evt.preventDefault();
-         if (!window.DeviceOrientationEvent || typeof DeviceOrientationEvent.requestPermission !== 'function') {
-           hideOverlay();
-           return;
-         }
-         DeviceOrientationEvent.requestPermission().then(result => {
-           if (result === 'granted') {
-             hideOverlay();
-             if (window.LevelGame && typeof window.LevelGame.orientationGranted === 'function') {
-               window.LevelGame.orientationGranted();
-             }
-           } else {
-             hideOverlay();
-             if (window.LevelGame && typeof window.LevelGame.orientationDenied === 'function') {
-               window.LevelGame.orientationDenied(result);
-             }
-           }
-         }).catch(err => {
-           hideOverlay();
-           if (window.LevelGame && typeof window.LevelGame.orientationDenied === 'function') {
-             window.LevelGame.orientationDenied(err && err.message ? err.message : String(err));
-           }
-         });
-       }
-
-       const needsPermission = window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function';
-       if (needsPermission && overlay && btn) {
-         showOverlay();
-         btn.addEventListener('click', requestMotionPermission, { passive: false });
-         btn.addEventListener('touchend', requestMotionPermission, { passive: false });
-       }
-     })();
-   </script>
+   <!-- permission overlay script moved to ../../js/levels/render_game.js -->
 
    <script src="../../js/bootstrap/bootstrap.js"></script>
  </body>

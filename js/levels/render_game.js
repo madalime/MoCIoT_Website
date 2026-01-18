@@ -169,7 +169,6 @@
             noteLockReminderShown();
             return;
         }
-        pauseGame();
         const wrap = document.createElement('div');
         wrap.id = 'lockPrompt';
         wrap.style.position = 'fixed';
@@ -251,7 +250,7 @@
             }
             markActive();
         };
-        const options = { once: true, passive: true };
+        const options = { passive: true };
         if (overlay) overlay.addEventListener('pointerdown', handler, options);
         if (canvas) canvas.addEventListener('pointerdown', handler, options);
         // Fallback for any other interaction on the page

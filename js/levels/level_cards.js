@@ -1,5 +1,12 @@
+/**
+ * Key used to store level completion times in localStorage.
+ */
 const COMPLETION_STORAGE_KEY = 'levelCompletionTimes';
 
+/**
+ * Loads the level completion times from localStorage.
+ * @returns {Object} An object mapping level numbers to completion times in milliseconds.
+ */
 function loadCompletionTimes() {
     try {
         const raw = localStorage.getItem(COMPLETION_STORAGE_KEY);
@@ -11,6 +18,11 @@ function loadCompletionTimes() {
     }
 }
 
+/**
+ * Formats a time duration in milliseconds into a string (MM:SS.HH).
+ * @param {number|null} ms - Time in milliseconds.
+ * @returns {string} Formatted time string or '-' if input is null.
+ */
 function formatMs(ms) {
     if (ms == null) return '-';
     const totalSeconds = ms / 1000;
@@ -21,7 +33,11 @@ function formatMs(ms) {
     return `${pad(minutes)}:${pad(seconds)}.${pad(hundredths)}`;
 }
 
-// Helper to map difficulty to badge class
+/**
+ * Maps a difficulty level to a corresponding CSS badge class.
+ * @param {string} diff - Difficulty level (e.g., 'easy', 'medium', 'hard').
+ * @returns {string} CSS class for the badge.
+ */
 function difficultyBadgeClass(diff) {
     switch ((diff || '').toLowerCase()) {
         case 'easy':
@@ -35,6 +51,12 @@ function difficultyBadgeClass(diff) {
     }
 }
 
+/**
+ * Creates a level card element.
+ * @param {Object} level - Level data including name, difficulty, and grid.
+ * @param {Object} completionTimes - Mapping of level numbers to completion times.
+ * @returns {HTMLElement} A column element containing the level card.
+ */
 function createLevelCard(level, completionTimes) {
     const col = document.createElement('div');
     col.className = 'col-12 col-sm-6 col-md-4 mb-4 d-flex';
@@ -142,7 +164,9 @@ function createLevelCard(level, completionTimes) {
     return col;
 }
 
-// Load and render levels
+/**
+ * Fetches level data and renders level cards on the page.
+ */
 document.addEventListener('DOMContentLoaded', () => {
     fetch('../js/levels/levels.json') // fix using relative path
         .then(response => {

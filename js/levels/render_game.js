@@ -1,46 +1,178 @@
+/**
+ * Main function to initialize and manage the tilt-controlled maze game.
+ * Handles canvas setup, physics, mobile orientation, and user interactions.
+ */
 (function () {
+    /**
+     * Canvas element for rendering the maze grid.
+     * @type {HTMLCanvasElement}
+     */
     const canvas = document.getElementById('levelCanvas');
+
+    /**
+     * Canvas element for rendering the ball overlay.
+     * @type {HTMLCanvasElement}
+     */
     const overlay = document.getElementById('ballCanvas');
+
+    /**
+     * Element for displaying messages to the user.
+     * @type {HTMLElement}
+     */
     const msg = document.getElementById('messageArea');
+
+    /**
+     * Overlay element shown at the start of the game.
+     * @type {HTMLElement}
+     */
     const startOverlay = document.getElementById('startOverlay');
 
-    // Get level param from URL
+    /**
+     * URL parameters for determining the level to load.
+     * @type {URLSearchParams}
+     */
     const params = new URLSearchParams(location.search);
+
+    /**
+     * Requested level number from the URL, defaults to 1 if not provided.
+     * @type {number}
+     */
     const levelParam = params.get('level') || params.get('l') || '1';
     const requestedLevel = parseInt(levelParam, 10) || 1;
 
-    // Path from this page (levels/play/index.html) to levels.json
+    /**
+     * Path to the levels.json file containing level data.
+     * @type {string}
+     */
     const levelsJsonPath = '../../js/levels/levels.json';
 
+    /**
+     * Current level data.
+     * @type {Object|null}
+     */
     let currentLevel = null;
+
+    /**
+     * Rendering information for the maze grid.
+     * @type {Object|null}
+     */
     let renderInfo = null; // { cols, rows, cellSize }
+
+    /**
+     * Starting cell of the maze.
+     * @type {Object|null}
+     */
     let startCell = null;
+
+    /**
+     * Goal cell of the maze.
+     * @type {Object|null}
+     */
     let goalCell = null;
+
+    /**
+     * Flag indicating whether the goal has been reached.
+     * @type {boolean}
+     */
     let goalReached = false;
+
+    /**
+     * ID of the current animation frame.
+     * @type {number|null}
+     */
     let animationId = null;
+
+    /**
+     * Timestamp of the last animation frame.
+     * @type {number|null}
+     */
     let lastFrameTime = null;
+
+    /**
+     * Flag indicating whether the animation is paused.
+     * @type {boolean}
+     */
     let animationPaused = false;
 
+    /**
+     * Ball object representing position and velocity.
+     * @type {Object}
+     */
     const ball = {
         pos: { x: 0, y: 0 },
         vel: { x: 0, y: 0 },
         radius: 8
     };
 
+    /**
+     * State of the device's orientation sensor.
+     * @type {Object}
+     */
     const sensorState = { accel: { x: 0, y: 0 }, enabled: false, available: false };
 
-    // Timer state to track elapsed play time
+    /**
+     * Timer state for tracking elapsed play time.
+     * @type {Object}
+     */
     const timerState = { startTime: 0, elapsedMs: 0, running: false, started: false };
+
+    /**
+     * Flag indicating whether the timer start handler is bound.
+     * @type {boolean}
+     */
     let timerStartBound = false;
+
+    /**
+     * Flag indicating whether orientation lock has been attempted.
+     * @type {boolean}
+     */
     let orientationLockTried = false;
+
+    /**
+     * Overlay element for landscape orientation instructions.
+     * @type {HTMLElement|null}
+     */
     let landscapeOverlay = null;
+
+    /**
+     * Prompt element for screen rotation lock instructions.
+     * @type {HTMLElement|null}
+     */
     let lockPrompt = null;
+
+    /**
+     * Key for storing level completion times in localStorage.
+     * @type {string}
+     */
     const COMPLETION_STORAGE_KEY = 'levelCompletionTimes';
+
+    /**
+     * Key for storing the timestamp of the last lock reminder in sessionStorage.
+     * @type {string}
+     */
     const LOCK_REMINDER_KEY = 'lockReminderTimestamp';
+
+    /**
+     * Key for storing the timestamp of the last user activity in sessionStorage.
+     * @type {string}
+     */
     const LAST_ACTIVE_KEY = 'lockLastActiveTimestamp';
+
+    /**
+     * Threshold for idle time before showing a lock reminder (in milliseconds).
+     * @type {number}
+     */
     const IDLE_THRESHOLD_MS = 20 * 60 * 1000; // 20 minutes
+
+    /**
+     * Timestamp of the last user activity.
+     * @type {number}
+     */
     let lastActive = Date.now();
 
+    /**
+     * Resets the timer state.
+     */
     function resetTimer() {
         timerState.startTime = 0;
         timerState.elapsedMs = 0;
@@ -48,6 +180,9 @@
         timerState.started = false;
     }
 
+    /**
+     * Starts the timer if it is not already running.
+     */
     function startTimer() {
         if (timerState.running) return;
         timerState.startTime = performance.now();
@@ -55,17 +190,29 @@
         timerState.started = true;
     }
 
+    /**
+     * Stops the timer if it is running.
+     */
     function stopTimer() {
         if (!timerState.running) return;
         timerState.elapsedMs += performance.now() - timerState.startTime;
         timerState.running = false;
     }
 
+    /**
+     * Gets the total elapsed time in milliseconds.
+     * @returns {number} The elapsed time in milliseconds.
+     */
     function getElapsedMs() {
         if (!timerState.running) return timerState.elapsedMs;
         return timerState.elapsedMs + (performance.now() - timerState.startTime);
     }
 
+    /**
+     * Formats a time duration in milliseconds as a string (MM:SS.HH).
+     * @param {number} ms - The time duration in milliseconds.
+     * @returns {string} The formatted time string.
+     */
     function formatElapsed(ms) {
         const totalSeconds = ms / 1000;
         const minutes = Math.floor(totalSeconds / 60);
@@ -75,6 +222,10 @@
         return `${pad(minutes)}:${pad(seconds)}.${pad(hundredths)}`;
     }
 
+    /**
+     * Loads high scores from localStorage.
+     * @returns {Object} An object mapping level numbers to completion times in milliseconds.
+     */
     function loadCompletionTimes() {
         try {
             const raw = localStorage.getItem(COMPLETION_STORAGE_KEY);
@@ -86,10 +237,19 @@
         }
     }
 
+    /**
+     * Persists completion times to localStorage.
+     * @param {Object} times - An object mapping level numbers to completion times in milliseconds.
+     */
     function persistCompletionTimes(times) {
         try { localStorage.setItem(COMPLETION_STORAGE_KEY, JSON.stringify(times)); } catch (_) {}
     }
 
+    /**
+     * Saves the completion time for a level if it is the best time.
+     * @param {number} levelNumber - The level number.
+     * @param {number} elapsedMs - The elapsed time in milliseconds.
+     */
     function saveCompletionTime(levelNumber, elapsedMs) {
         const ms = Number(elapsedMs);
         if (!Number.isFinite(ms) || ms < 0) return;
@@ -101,11 +261,18 @@
         }
     }
 
+    /**
+     * Marks the current time as the last active time.
+     */
     function markActive() {
         lastActive = Date.now();
         try { sessionStorage.setItem(LAST_ACTIVE_KEY, String(lastActive)); } catch (_) {}
     }
 
+    /**
+     * Gets the last active timestamp from sessionStorage.
+     * @returns {number} The last active timestamp.
+     */
     function getLastActive() {
         const stored = sessionStorage.getItem(LAST_ACTIVE_KEY);
         if (stored) {
@@ -117,6 +284,10 @@
         return lastActive;
     }
 
+    /**
+     * Determines if the lock reminder should be shown based on idle time.
+     * @returns {boolean} True if the lock reminder should be shown, false otherwise.
+     */
     function shouldShowLockReminder() {
         const now = Date.now();
         const lastShownRaw = sessionStorage.getItem(LOCK_REMINDER_KEY);
@@ -126,10 +297,10 @@
         return idleFor >= IDLE_THRESHOLD_MS;
     }
 
-    function noteLockReminderShown() {
-        try { sessionStorage.setItem(LOCK_REMINDER_KEY, String(Date.now())); } catch (_) {}
-    }
-
+    /**
+     * Checks if the device is in landscape orientation.
+     * @returns {boolean} True if the device is in landscape orientation, false otherwise.
+     */
     function isLandscape() {
         if (screen.orientation && screen.orientation.type) {
             return screen.orientation.type.startsWith('landscape');
@@ -137,6 +308,9 @@
         return window.matchMedia('(orientation: landscape)').matches || window.innerWidth >= window.innerHeight;
     }
 
+    /**
+     * Shows the landscape overlay instructing the user to rotate the device.
+     */
     function showLandscapeOverlay() {
         if (landscapeOverlay) {
             landscapeOverlay.style.display = 'flex';
@@ -158,15 +332,21 @@
         landscapeOverlay = overlayEl;
     }
 
+    /**
+     * Hides the landscape overlay if it is currently displayed.
+     */
     function hideLandscapeOverlay() {
         if (landscapeOverlay) landscapeOverlay.style.display = 'none';
     }
 
+    /**
+     * Shows the lock prompt instructing the user to lock the screen rotation.
+     */
     function showLockPrompt() {
         if (!shouldShowLockReminder()) return;
         if (lockPrompt) {
             lockPrompt.style.display = 'flex';
-            noteLockReminderShown();
+            markActive();
             return;
         }
         pauseGame();
@@ -209,13 +389,19 @@
         wrap.appendChild(card);
         document.body.appendChild(wrap);
         lockPrompt = wrap;
-        noteLockReminderShown();
+        markActive();
     }
 
+    /**
+     * Hides the lock prompt if it is currently displayed.
+     */
     function hideLockPrompt() {
         if (lockPrompt) lockPrompt.style.display = 'none';
     }
 
+    /**
+     * Handles the landscape state by showing or hiding the appropriate overlays and prompts.
+     */
     function handleLandscapeState() {
         if (isLandscape()) {
             hideLandscapeOverlay();
@@ -226,6 +412,9 @@
         }
     }
 
+    /**
+     * Requests orientation lock to landscape mode.
+     */
     async function requestOrientationLock() {
         if (orientationLockTried) return;
         orientationLockTried = true;
@@ -241,6 +430,9 @@
         }
     }
 
+    /**
+     * Binds the timer start handler to user interactions, ensuring it is called only once.
+     */
     function bindTimerStartOnce() {
         if (timerStartBound) return;
         const handler = () => {
@@ -259,6 +451,9 @@
         timerStartBound = true;
     }
 
+    /**
+     * Pauses the game, stopping all animations and the timer.
+     */
     function pauseGame() {
         animationPaused = true;
         stopTimer();
@@ -270,6 +465,9 @@
         }
     }
 
+    /**
+     * Resumes the game, starting the animation loop and timer.
+     */
     function resumeGame() {
         if (goalReached) return;
         const idleFor = Date.now() - getLastActive();
@@ -282,6 +480,9 @@
         startTimer();
     }
 
+    /**
+     * Creates and displays the win modal when the goal is reached.
+     */
     function createWinModal() {
         if (document.getElementById('winModalOverlay')) return;
         const overlayEl = document.createElement('div');
@@ -345,6 +546,9 @@
         document.body.appendChild(overlayEl);
     }
 
+    /**
+     * Updates the win modal to display the elapsed time.
+     */
     function updateWinModalTime() {
         const el = document.getElementById('winModalTime');
         if (!el) return;
@@ -352,6 +556,9 @@
         el.textContent = 'Time: ' + formatElapsed(ms);
     }
 
+    /**
+     * Shows the win modal, stopping the timer and saving the completion time.
+     */
     function showWinModal() {
         createWinModal();
         stopTimer();
@@ -366,18 +573,38 @@
         if (prim && typeof prim.focus === 'function') prim.focus();
     }
 
+    /**
+     * Shows a message to the user in the message area.
+     * @param {string} text - The message text.
+     * @param {string} [type='danger'] - The message type (e.g., 'success', 'warning', 'danger').
+     */
     function showMessage(text, type = 'danger') {
         msg.innerHTML = `<div class="alert alert-${type}" role="alert">${text}</div>`;
     }
 
+    /**
+     * Clears the message area.
+     */
     function clearMessage() {
         msg.innerHTML = '';
     }
 
+    /**
+     * Clamps a value between a minimum and maximum value.
+     * @param {number} val - The value to clamp.
+     * @param {number} min - The minimum value.
+     * @param {number} max - The maximum value.
+     * @returns {number} The clamped value.
+     */
     function clamp(val, min, max) {
         return Math.min(max, Math.max(min, val));
     }
 
+    /**
+     * Finds the special cells (start and goal) in the level grid.
+     * @param {Array<Array<string>>} grid - The level grid.
+     * @returns {Object} An object containing the start and goal cell coordinates.
+     */
     function findSpecialCells(grid) {
         let start = null;
         let goal = null;
@@ -391,10 +618,17 @@
         return { start, goal };
     }
 
+    /**
+     * Synchronizes the ball's radius with the cell size.
+     * @param {number} cellSize - The size of the grid cell.
+     */
     function syncBallRadius(cellSize) {
         ball.radius = Math.max(3, Math.min(cellSize * 0.35, cellSize * 0.45));
     }
 
+    /**
+     * Synchronizes the overlay size with the rendering information.
+     */
     function syncOverlaySize() {
         if (!renderInfo || !overlay) return;
         const dpr = window.devicePixelRatio || 1;
@@ -409,6 +643,9 @@
         ctx.clearRect(0, 0, widthCss, heightCss);
     }
 
+    /**
+     * Places the ball at the starting position.
+     */
     function placeBallAtStart() {
         if (!renderInfo || !startCell) return;
         syncBallRadius(renderInfo.cellSize);
@@ -420,6 +657,10 @@
         drawBall();
     }
 
+    /**
+     * Rescales the ball's position and radius based on the new cell size.
+     * @param {number} oldCellSize - The old size of the grid cell.
+     */
     function rescaleBall(oldCellSize) {
         if (!oldCellSize || !renderInfo) return;
         const scale = renderInfo.cellSize / oldCellSize;
@@ -428,6 +669,12 @@
         syncBallRadius(renderInfo.cellSize);
     }
 
+    /**
+     * Checks if a cell is a wall based on the current level data.
+     * @param {number} col - The column index of the cell.
+     * @param {number} row - The row index of the cell.
+     * @returns {boolean} True if the cell is a wall, false otherwise.
+     */
     function isWall(col, row) {
         if (!currentLevel || !currentLevel.grid) return false;
         if (row < 0 || col < 0) return true;
@@ -435,6 +682,10 @@
         return currentLevel.grid[row][col] === '#';
     }
 
+    /**
+     * Computes the acceleration values from the device's orientation sensor.
+     * @returns {Object} An object containing the x and y acceleration values.
+     */
     function computeAcceleration() {
         let ax = 0;
         let ay = 0;
@@ -445,6 +696,10 @@
         return { ax, ay };
     }
 
+    /**
+     * Performs a single step of physics simulation, updating the ball's position and velocity.
+     * @param {number} dt - The time delta for the simulation step.
+     */
     function stepPhysics(dt) {
         if (!renderInfo) return;
         const { ax, ay } = computeAcceleration();
@@ -479,6 +734,14 @@
         }
     }
 
+    /**
+     * Resolves circle collisions for the ball, adjusting its position and velocity.
+     * @param {number} nextX - The proposed next x position of the ball.
+     * @param {number} nextY - The proposed next y position of the ball.
+     * @param {number} radius - The radius of the ball.
+     * @param {number} cellSize - The size of the grid cell.
+     * @returns {Object} The resolved x and y coordinates.
+     */
     function resolveCircleCollisions(nextX, nextY, radius, cellSize) {
         let cx = nextX;
         let cy = nextY;
@@ -517,7 +780,15 @@
                             const topPen = Math.abs(cy - y0);
                             const bottomPen = Math.abs(y1 - cy);
                             const minPen = Math.min(leftPen, rightPen, topPen, bottomPen);
-                            if (minPen === leftPen) nx = -1; else if (minPen === rightPen) nx = 1; else if (minPen === topPen) ny = -1; else ny = 1;
+                            if (minPen === leftPen) {
+                                nx = -1;
+                            } else if (minPen === rightPen) {
+                                nx = 1;
+                            } else if (minPen === topPen) {
+                                ny = -1;
+                            } else {
+                                ny = 1;
+                            }
                         }
                         const penetration = radius - dist + 0.01;
                         cx += nx * penetration;
@@ -538,6 +809,9 @@
         return { x: cx, y: cy };
     }
 
+    /**
+     * Draws the ball on the overlay canvas at its current position.
+     */
     function drawBall() {
         if (!overlay || !renderInfo) return;
         const ctx = overlay.getContext('2d');
@@ -553,6 +827,10 @@
         ctx.stroke();
     }
 
+    /**
+     * Main animation loop, updating the game state and rendering the ball.
+     * @param {number} timestamp - The current timestamp.
+     */
     function loop(timestamp) {
         if (animationPaused) {
             animationId = null;
@@ -571,6 +849,9 @@
         animationId = requestAnimationFrame(loop);
     }
 
+    /**
+     * Starts the animation loop.
+     */
     function startLoop() {
         if (animationId) cancelAnimationFrame(animationId);
         animationPaused = false;
@@ -578,6 +859,10 @@
         animationId = requestAnimationFrame(loop);
     }
 
+    /**
+     * Handles device orientation events, updating the sensor state.
+     * @param {DeviceOrientationEvent} event - The device orientation event.
+     */
     function handleOrientation(event) {
         sensorState.available = true;
         markActive();
@@ -600,12 +885,18 @@
         sensorState.accel.y = normY * accelScale;
     }
 
+    /**
+     * Attaches the orientation event listener if not already enabled.
+     */
     const attachOrientationListener = () => {
         if (sensorState.enabled) return;
         sensorState.enabled = true;
         window.addEventListener('deviceorientation', handleOrientation, true);
     };
 
+    /**
+     * Callback function for when orientation permission is granted.
+     */
     function onOrientationPermissionGranted() {
         attachOrientationListener();
         if (startOverlay) startOverlay.classList.add('d-none');
@@ -615,12 +906,19 @@
         markActive();
     }
 
+    /**
+     * Callback function for when orientation permission is denied.
+     * @param {string} reason - The reason for denial.
+     */
     function onOrientationPermissionDenied(reason) {
         const suffix = reason ? (': ' + reason) : '';
         showMessage('Orientation permission denied' + suffix, 'warning');
         if (startOverlay) startOverlay.classList.add('d-none');
     }
 
+    /**
+     * Prompts the user to start the game on mobile devices, handling permission and orientation.
+     */
     function promptToStartOnMobile() {
         const needsPermission = (typeof DeviceOrientationEvent !== 'undefined') && (typeof DeviceOrientationEvent.requestPermission === 'function');
         handleLandscapeState();
@@ -650,6 +948,10 @@
         // HTML permission popup will handle permission and call back into us
     }
 
+    /**
+     * Draws the grid on the main canvas based on the level data.
+     * @param {Array<Array<string>>} grid - The level grid.
+     */
     function drawGrid(grid) {
         try {
             if (!grid || !grid.length) return;
@@ -719,6 +1021,10 @@
         }
     }
 
+    /**
+     * Renders the specified level by loading its data and initializing the game state.
+     * @param {Object} levelObj - The level object containing grid and metadata.
+     */
     function renderLevel(levelObj) {
         if (!levelObj) return;
         currentLevel = levelObj;

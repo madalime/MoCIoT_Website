@@ -806,8 +806,8 @@
     });
 
     // Uses distinct variable names to avoid clashing with existing `overlay` (ball canvas)
-    const permOverlay = document.getElementById('permissionOverlay');
-    const permBtn = document.getElementById('permissionButton');
+    const permOverlay = document.getElementById('startOverlay');
+    const permBtn = document.getElementById('startOverlay');
 
     function hidePermOverlay() { if (permOverlay) permOverlay.classList.add('d-none'); }
     function showPermOverlay() { if (permOverlay) permOverlay.classList.remove('d-none'); }
@@ -839,7 +839,7 @@
     }
 
     const needsPermission = window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function';
-    if (needsPermission && permOverlay && permBtn && shouldShowLockReminder()) {
+    if (needsPermission && permOverlay && permBtn) {
         showPermOverlay();
         permBtn.addEventListener('click', requestMotionPermission, { passive: false });
         permBtn.addEventListener('touchend', requestMotionPermission, { passive: false });

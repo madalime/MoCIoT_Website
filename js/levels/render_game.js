@@ -806,7 +806,14 @@
     });
 
     window.addEventListener('orientationchange', handleLandscapeState);
-    window.matchMedia('(orientation: landscape)').addEventListener('change', handleLandscapeState);
+    const mql = window.matchMedia('(orientation: landscape)');
+    if (mql) {
+        if (typeof mql.addEventListener === 'function') {
+            mql.addEventListener('change', handleLandscapeState);
+        } else if (typeof mql.addListener === 'function') {
+            mql.addListener(handleLandscapeState);
+        }
+    }
     window.addEventListener('pointerdown', markActive, { passive: true });
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') markActive(); });
 

@@ -502,7 +502,7 @@
         const restartBtn = document.createElement('button');
         restartBtn.type = 'button';
         restartBtn.className = 'btn btn-outline-secondary';
-        restartBtn.textContent = 'restart';
+        restartBtn.textContent = 'retry level';
         restartBtn.addEventListener('click', () => {
             const base = location.pathname.split('?')[0];
             location.href = base + '?level=' + requestedLevel;
@@ -527,6 +527,7 @@
             location.href = base + '?level=' + nextLevel;
         });
 
+        btnGroup.appendChild(restartBtn);
         btnGroup.appendChild(overviewBtn);
         btnGroup.appendChild(nextBtn);
 

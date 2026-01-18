@@ -645,10 +645,12 @@
     }
 
     function armPermissionHandlers(targets) {
-        const opts = { once: true, passive: true };
+        const opts = { once: true };
         targets.filter(Boolean).forEach(el => {
             el.addEventListener('pointerdown', handlePermissionFromGesture, opts);
             el.addEventListener('touchstart', handlePermissionFromGesture, opts);
+            el.addEventListener('touchend', handlePermissionFromGesture, opts);
+            el.addEventListener('click', handlePermissionFromGesture, opts);
         });
     }
 

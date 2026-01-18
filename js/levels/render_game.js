@@ -169,6 +169,7 @@
             noteLockReminderShown();
             return;
         }
+        pauseGame();
         const wrap = document.createElement('div');
         wrap.id = 'lockPrompt';
         wrap.style.position = 'fixed';
@@ -231,14 +232,12 @@
         hideLockPrompt();
         if (!screen.orientation || typeof screen.orientation.lock !== 'function') {
             showLockPrompt();
-            pauseGame();
             return;
         }
         try {
             await screen.orientation.lock('landscape');
         } catch (e) {
             showLockPrompt();
-            pauseGame();
         }
     }
 

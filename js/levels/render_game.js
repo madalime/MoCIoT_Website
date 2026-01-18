@@ -616,7 +616,6 @@
 
     function onOrientationPermissionGranted() {
         attachOrientationListener();
-        showMessage('Orientation permission granted');
         if (startOverlay) startOverlay.classList.add('d-none');
         requestOrientationLock();
         placeBallAtStart();

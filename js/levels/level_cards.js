@@ -157,7 +157,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const completionTimes = loadCompletionTimes();
+            //const completionTimes = loadCompletionTimes();
+            const completionTimes = null;
 
             levels.forEach(level => {
                 const cardCol = createLevelCard(level, completionTimes);

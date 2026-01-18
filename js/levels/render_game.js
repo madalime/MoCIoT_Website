@@ -244,7 +244,11 @@
     function bindTimerStartOnce() {
         if (timerStartBound) return;
         const handler = () => {
-            startTimer();
+            if (animationPaused) {
+                resumeGame();
+            } else {
+                startTimer();
+            }
             markActive();
         };
         const options = { once: true, passive: true };

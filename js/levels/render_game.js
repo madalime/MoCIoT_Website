@@ -600,7 +600,10 @@
     }
 
     function setupOrientation(userInitiated = false) {
-        if (typeof DeviceOrientationEvent === 'undefined') return;
+        if (typeof DeviceOrientationEvent === 'undefined') {
+            alert('Device does not support orientation sensor.');
+            return;
+        }
 
         const attachListener = () => {
             if (sensorState.enabled) return;
@@ -609,7 +612,10 @@
         };
 
         if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-            if (!userInitiated) return; // need an explicit tap on iOS
+            if (!userInitiated) {
+                alert('Orientation sensor requires user permission.');
+                return;
+            } // need an explicit tap on iOS
             DeviceOrientationEvent.requestPermission().then(result => {
                 if (result === 'granted') {
                     alert('Orientation sensor enabled. Tilt your device to control the ball.')

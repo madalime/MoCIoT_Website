@@ -117,7 +117,7 @@
     const timerState = { startTime: 0, elapsedMs: 0, running: false, started: false };
 
     /**
-     * Flag indicating whether the timer start handler is bound.
+     * Flag indicating whether the timer is bound.
      * @type {boolean}
      */
     let timerStartBound = false;
@@ -135,7 +135,7 @@
     let landscapeOverlay = null;
 
     /**
-     * Prompt element for screen rotation lock instructions.
+     * HTML element for screen rotation lock instructions.
      * @type {HTMLElement|null}
      */
     let lockPrompt = null;

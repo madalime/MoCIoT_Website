@@ -1028,13 +1028,6 @@
         drawGrid(levelObj.grid);
         placeBallAtStart();
         startLoop();
-        if (levelObj.level === 1) {
-            const times = loadCompletionTimes()
-            const levelTime = Number(times[1]);
-            if (!Number.isFinite(levelTime)) {
-                alert('Tilt your device to move the ball. Tap the screen to start the timer.');
-            }
-        }
     }
 
     // Fetch levels

@@ -6,24 +6,9 @@
   <title>Marble Maze - Main menu</title>
   <script src="js/sensor_guard.js"></script>
   <link rel="stylesheet" href="css/bootstrap.css">
-  <style>
-    body {
-      position: relative;
-      min-height: 100vh;
-    }
-
-    body::before {
-      /* grayscale overlay so UI remains full color */
-      content: "";
-      position: fixed;
-      inset: 0;
-      background: url('img/background.png') center/cover no-repeat;
-      filter: grayscale(100%);
-      z-index: -1;
-    }
-  </style>
+  <link href="css/style.css" rel="stylesheet"/>
 </head>
-<body class="d-flex align-items-center justify-content-center vh-100">
+<body class="d-flex align-items-center justify-content-center vh-100" id="main">
   <div class="bg-white border border-secondary border-2 rounded-4 px-4 py-4 shadow-sm d-inline-block mx-4 my-4" role="main">
     <div class="text-center">
       <h1 class="mb-4">Marble Maze</h1>

@@ -1,0 +1,17 @@
+#main {
+    position: relative;
+    min-height: 100vh;
+}
+
+#main::before {
+    /* grayscale overlay so UI remains full color */
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: url('../img/background.png') center/cover no-repeat;
+    filter: grayscale(100%);
+    z-index: -1;
+}
+
+.start-overlay { backdrop-filter: blur(1px); z-index: 1050; }
+.start-overlay:not(.d-none) { display: flex; }

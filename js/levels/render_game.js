@@ -272,10 +272,10 @@
         if (stored) {
             const num = Number(stored);
             if (!Number.isNaN(num)) {
-                lastActive = num;
+                return num;
             }
         }
-        return lastActive;
+        return 0;
     }
 
     /**

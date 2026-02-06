@@ -886,9 +886,9 @@
     function onOrientationPermissionGranted() {
         attachOrientationListener();
         if (startOverlay) startOverlay.classList.add('d-none');
-        showLockPrompt();
         placeBallAtStart();
         startTimer();
+        showLockPrompt();
     }
 
     /**
@@ -909,8 +909,8 @@
 
         if (!startOverlay) {
             attachOrientationListener();
-            showLockPrompt();
             bindTimerStartOnce();
+            showLockPrompt();
             return;
         }
 
@@ -918,8 +918,8 @@
         startOverlay.addEventListener('click', () => {
             startOverlay.classList.add('d-none');
             attachOrientationListener();
-            showLockPrompt();
             bindTimerStartOnce();
+            showLockPrompt();
         })
     }
 

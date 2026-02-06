@@ -38,6 +38,7 @@
     </div>
   </div>
 
+  <!-- Start overlay shown on devices that don't need explicit permissions for sensors (tap to start works on the whole screen area) -->
   <div id="startOverlay" class="start-overlay d-none" role="button" aria-label="Tap to start sensors">
       <div class="d-flex flex-column align-items-center gap-2">
           <div class="text-white mt-3 fw-semibold text-center h3">Tilt your device to move the ball.</div>
@@ -45,6 +46,7 @@
       </div>
   </div>
 
+  <!-- Start overlay shown on devices that need explicite permissions for sensors (tap to start works only on the button in the center) -->
   <div id="permissionOverlay" class="start-overlay d-none" role="dialog" aria-label="Device orientation permission">
       <div class="d-flex flex-column align-items-center gap-2">
           <div class="text-white mt-3 fw-semibold text-center h3">Tilt your device to move the ball.</div>
@@ -54,9 +56,6 @@
 
    <script src="../../js/levels/level_render.js"></script>
    <script src="../../js/levels/render_game.js"></script>
-
-   <!-- permission overlay script moved to ../../js/levels/render_game.js -->
-
    <script src="../../js/bootstrap/bootstrap.js"></script>
  </body>
 </html>

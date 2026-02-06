@@ -22,7 +22,7 @@
     const rows = grid.length;
     const cols = grid[0].length;
 
-    // Ensure the grid is rectangular
+    // Ensure all rows have the same number of columns
     if (!grid.every(r => r.length === cols)) {
       throw new Error('Grid rows are not uniform width');
     }
@@ -48,8 +48,8 @@
     for (let r = 0; r < rows; r++){
         const row = grid[r];
         for (let c = 0; c < cols; c++){
-            const ch = row[c] || '.';
-            ctx.fillStyle = COLORS[ch] || COLORS['.'];
+            const ch = row[c];
+            ctx.fillStyle = COLORS[ch] || COLORS['.']; // Default to floor color for unknown characters
             ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
 
             if (opts.drawGridLines){

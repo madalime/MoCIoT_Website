@@ -19,7 +19,7 @@ function loadCompletionTimes() {
 }
 
 /**
- * Formats a time duration in milliseconds into a string (MM:SS.HH).
+ * Formats a time duration in milliseconds into a string (MM:SS.hh).
  * @param {number|null} ms - Time in milliseconds.
  * @returns {string} Formatted time string or '-' if input is null.
  */
@@ -52,6 +52,31 @@ function difficultyBadgeClass(diff) {
 }
 
 /**
+ * Renders a grid preview for a level using the shared LevelRenderer.
+ * @param level - Level data containing the grid and name.
+ * @returns {HTMLCanvasElement|null} A canvas element with the rendered grid or null if rendering fails.
+ */
+function renderGamePreview(level) {
+    if (Array.isArray(level.grid) && level.grid.length && window.LevelRenderer && window.LevelRenderer.renderGridToCanvas) {
+        const canvas = document.createElement('canvas');
+        canvas.className = 'mb-3 rounded border w-100 h-100';
+        canvas.setAttribute('aria-label', `Preview for ${level.name || 'level ' + level.level}`);
+        try {
+            window.LevelRenderer.renderGridToCanvas(canvas, level.grid, {
+                maxWidth: 220,
+                maxHeight: 140,
+                minCell: 4,
+                drawGridLines: true
+            });
+            return canvas;
+        } catch (e) {
+            console.warn('Level preview render failed', e);
+            return null;
+        }
+    }
+}
+
+/**
  * Creates a level card element.
  * @param {Object} level - Level data including name, difficulty, and grid.
  * @param {Object} completionTimes - Mapping of level numbers to completion times.
@@ -69,20 +94,8 @@ function createLevelCard(level, completionTimes) {
     const cardBody = document.createElement('div');
     cardBody.className = 'card-body d-flex flex-column';
 
-    // Grid preview: render a small canvas using the shared renderer
-    let preview = null;
-    if (Array.isArray(level.grid) && level.grid.length && window.LevelRenderer && window.LevelRenderer.renderGridToCanvas) {
-        const canvas = document.createElement('canvas');
-        canvas.className = 'mb-3 rounded border w-100 h-100';
-        canvas.setAttribute('aria-label', `Preview for ${level.name || 'level ' + level.level}`);
-        try {
-            window.LevelRenderer.renderGridToCanvas(canvas, level.grid, { maxWidth: 220, maxHeight: 140, minCell: 4, drawGridLines: true });
-            preview = canvas;
-        } catch (e) {
-            console.warn('Level preview render failed', e);
-            preview = null;
-        }
-    }
+    // Grid preview: render a small canvas with preview of the level layout.
+    let preview = renderGamePreview(level);
 
     // Title row: left side contains the H5 title + difficulty badge; right side holds the Completed badge
     const titleRow = document.createElement('div');
@@ -94,7 +107,7 @@ function createLevelCard(level, completionTimes) {
 
     const title = document.createElement('h5');
     title.className = 'card-title mb-0';
-    title.textContent = level.name || `Level ${level.level}`;
+    title.textContent = level.name || `Level ${level.level}`; // Optionally, use level name, fallback to "Level X" if name is missing
 
     const difficultyBadge = document.createElement('span');
     difficultyBadge.className = 'badge ' + difficultyBadgeClass(level.difficulty) + ' ms-2';
@@ -168,7 +181,7 @@ function createLevelCard(level, completionTimes) {
  * Fetches level data and renders level cards on the page.
  */
 document.addEventListener('DOMContentLoaded', () => {
-    fetch('../js/levels/levels.json') // fix using relative path
+    fetch('../js/levels/levels.json')
         .then(response => {
             if (!response.ok) throw new Error('Network response was not ok: ' + response.status);
             return response.json();

@@ -203,7 +203,7 @@
     }
 
     /**
-     * Formats a time duration in milliseconds as a string (MM:SS.HH).
+     * Formats a time duration in milliseconds as a string (MM:SS.hh).
      * @param {number} ms - The time duration in milliseconds.
      * @returns {string} The formatted time string.
      */
@@ -370,10 +370,7 @@
         closeBtn.type = 'button';
         closeBtn.className = 'btn btn-sm btn-outline-secondary';
         closeBtn.textContent = 'Dismiss';
-        closeBtn.addEventListener('click', () => {
-            wrap.style.display = 'none';
-            resumeGame();
-        });
+        closeBtn.addEventListener('click', () => hideLockPrompt());
 
         card.appendChild(text);
         card.appendChild(closeBtn);
@@ -388,6 +385,7 @@
      */
     function hideLockPrompt() {
         if (lockPrompt) lockPrompt.style.display = 'none';
+        resumeGame();
     }
 
     /**
@@ -914,7 +912,7 @@
     }
 
     /**
-     * Prompts the user to start the game on mobile devices, handling permission and orientation.
+     * Prompts the user to start the game on mobile devices
      */
     function promptToStartOnMobile() {
         handleLandscapeState();
@@ -1088,7 +1086,6 @@
         orientationDenied: onOrientationPermissionDenied,
     });
 
-    // Uses distinct variable names to avoid clashing with existing `overlay` (ball canvas)
     const permOverlay = document.getElementById('permissionOverlay');
     const permBtn = document.getElementById('permissionButton');
 

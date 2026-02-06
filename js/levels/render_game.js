@@ -123,12 +123,6 @@
     let timerStartBound = false;
 
     /**
-     * Flag indicating whether orientation lock has been attempted.
-     * @type {boolean}
-     */
-    let orientationLockTried = false;
-
-    /**
      * Overlay element for landscape orientation instructions.
      * @type {HTMLElement|null}
      */
@@ -285,6 +279,7 @@
     function shouldShowLockReminder() {
         const now = Date.now();
         const idleFor = now - getLastActive();
+        console.log('idleFor', idleFor);
         return idleFor >= IDLE_THRESHOLD_MS;
     }
 
@@ -337,6 +332,7 @@
         if (!shouldShowLockReminder()) return;
         if (lockPrompt) {
             lockPrompt.style.display = 'flex';
+            pauseGame();
             markActive();
             return;
         }
@@ -384,6 +380,7 @@
      * Hides the lock prompt if it is currently displayed.
      */
     function hideLockPrompt() {
+        console.log('Hiding lock prompt');
         if (lockPrompt) lockPrompt.style.display = 'none';
         resumeGame();
     }
@@ -402,24 +399,6 @@
     }
 
     /**
-     * Requests orientation lock to landscape mode.
-     */
-    async function requestOrientationLock() {
-        if (orientationLockTried) return;
-        orientationLockTried = true;
-        hideLockPrompt();
-        if (!screen.orientation || typeof screen.orientation.lock !== 'function') {
-            showLockPrompt();
-            return;
-        }
-        try {
-            await screen.orientation.lock('landscape');
-        } catch (e) {
-            showLockPrompt();
-        }
-    }
-
-    /**
      * Binds the timer start handler to user interactions, ensuring it is called only once.
      */
     function bindTimerStartOnce() {
@@ -430,7 +409,6 @@
             } else {
                 startTimer();
             }
-            markActive();
         };
         const options = { passive: true };
         if (overlay) overlay.addEventListener('pointerdown', handler, options);
@@ -459,7 +437,6 @@
      */
     function resumeGame() {
         if (goalReached) return;
-        markActive();
         animationPaused = false;
         startLoop();
         startTimer();
@@ -860,7 +837,6 @@
      */
     function handleOrientation(event) {
         sensorState.available = true;
-        markActive();
         const gamma = clamp(event.gamma || 0, -50, 50); // left-right
         const beta = clamp(event.beta || 0, -50, 50); // front-back
         const angle = (window.screen && window.screen.orientation && window.screen.orientation.angle) || window.orientation || 0;
@@ -895,10 +871,9 @@
     function onOrientationPermissionGranted() {
         attachOrientationListener();
         if (startOverlay) startOverlay.classList.add('d-none');
-        requestOrientationLock();
+        showLockPrompt();
         placeBallAtStart();
         startTimer();
-        markActive();
     }
 
     /**
@@ -916,11 +891,10 @@
      */
     function promptToStartOnMobile() {
         handleLandscapeState();
-        markActive();
 
         if (!startOverlay) {
             attachOrientationListener();
-            requestOrientationLock();
+            showLockPrompt();
             bindTimerStartOnce();
             return;
         }
@@ -929,7 +903,7 @@
         startOverlay.addEventListener('click', () => {
             startOverlay.classList.add('d-none');
             attachOrientationListener();
-            requestOrientationLock();
+            showLockPrompt();
             bindTimerStartOnce();
         })
     }
@@ -1078,8 +1052,6 @@
             mql.addListener(handleLandscapeState);
         }
     }
-    window.addEventListener('pointerdown', markActive, { passive: true });
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') markActive(); });
 
     window.LevelGame = Object.assign(window.LevelGame || {}, {
         orientationGranted: onOrientationPermissionGranted,

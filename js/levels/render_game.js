@@ -423,6 +423,9 @@
                 resumeGame();
             } else {
                 startTimer();
+                if (lockPromptActive || landscapeOverlayActive) {
+                    pauseGame();
+                }
             }
         };
         const options = { passive: true };

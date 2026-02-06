@@ -129,10 +129,21 @@
     let landscapeOverlay = null;
 
     /**
+     * Flag indicating whether the landscape overlay is currently active.
+     * @type {boolean}
+     */
+    let landscapeOverlayActive = false;
+    /**
      * HTML element for screen rotation lock instructions.
      * @type {HTMLElement|null}
      */
     let lockPrompt = null;
+
+    /**
+     * Flag indicating whether the lock prompt is currently active.
+     * @type {boolean}
+     */
+    let lockPromptActive = false;
 
     /**
      * Key for storing level completion times in localStorage.
@@ -298,6 +309,7 @@
      * Shows the landscape overlay instructing the user to rotate the device.
      */
     function showLandscapeOverlay() {
+        landscapeOverlayActive = true
         if (landscapeOverlay) {
             landscapeOverlay.style.display = 'flex';
             return;
@@ -322,6 +334,7 @@
      * Hides the landscape overlay if it is currently displayed.
      */
     function hideLandscapeOverlay() {
+        landscapeOverlayActive = false;
         if (landscapeOverlay) landscapeOverlay.style.display = 'none';
     }
 
@@ -330,13 +343,14 @@
      */
     function showLockPrompt() {
         if (!shouldShowLockReminder()) return;
+        lockPromptActive = true;
+        pauseGame();
+        markActive();
         if (lockPrompt) {
             lockPrompt.style.display = 'flex';
-            pauseGame();
-            markActive();
             return;
         }
-        pauseGame();
+
         const wrap = document.createElement('div');
         wrap.id = 'lockPrompt';
         wrap.style.position = 'fixed';
@@ -373,16 +387,17 @@
         wrap.appendChild(card);
         document.body.appendChild(wrap);
         lockPrompt = wrap;
-        markActive();
     }
 
     /**
      * Hides the lock prompt if it is currently displayed.
      */
     function hideLockPrompt() {
-        console.log('Hiding lock prompt');
+        lockPromptActive = false;
         if (lockPrompt) lockPrompt.style.display = 'none';
-        resumeGame();
+        if (!lockPromptActive) {
+            resumeGame();
+        }
     }
 
     /**
@@ -391,7 +406,7 @@
     function handleLandscapeState() {
         if (isLandscape()) {
             hideLandscapeOverlay();
-            if (animationPaused) resumeGame();
+            if (animationPaused && !lockPromptActive) resumeGame();
         } else {
             showLandscapeOverlay();
             pauseGame();

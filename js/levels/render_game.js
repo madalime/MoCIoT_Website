@@ -423,9 +423,6 @@
                 resumeGame();
             } else {
                 startTimer();
-                if (lockPromptActive || landscapeOverlayActive) {
-                    pauseGame();
-                }
             }
         };
         const options = { passive: true };
@@ -826,16 +823,15 @@
             animationId = null;
             return;
         }
+        if (landscapeOverlayActive || lockPromptActive) {
+            pauseGame();
+        }
         if (!currentLevel || !renderInfo) return;
         if (lastFrameTime === null) lastFrameTime = timestamp;
         const dt = Math.min(0.032, Math.max(0.001, (timestamp - lastFrameTime) / 1000));
         lastFrameTime = timestamp;
         stepPhysics(dt);
         drawBall();
-        if (animationPaused) {
-            animationId = null;
-            return;
-        }
         animationId = requestAnimationFrame(loop);
     }
 
